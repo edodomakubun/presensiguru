@@ -99,6 +99,7 @@ function renderFaceRegistration() {
                     // Simpan ke DB
                     const res = await fetch('/api/guru', {
                         method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             id: state.user.id,
                             action: 'register_face',
@@ -195,6 +196,7 @@ function renderLogin() {
         try {
             const res = await fetch('/api/login', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, pin })
             });
             const data = await res.json();
@@ -526,8 +528,17 @@ function renderAdminGuru() {
     document.getElementById('guruForm').onsubmit = async (e) => {
         e.preventDefault();
         const payload = { id: document.getElementById('guruId').value, nama: document.getElementById('guruNama').value, pin: document.getElementById('guruPin').value };
-        await fetch('/api/guru', { method: 'POST', body: JSON.stringify(payload) });
-        closeGuruModal(); loadGuruData();
+        const res = await fetch('/api/guru', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            closeGuruModal(); loadGuruData();
+            Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data guru disimpan.', timer: 1500, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan data guru.' });
+        }
     };
 }
 
@@ -567,7 +578,11 @@ async function resetFace(id) {
         confirmButtonText: 'Ya, Reset'
     });
     if (result.isConfirmed) {
-        await fetch('/api/guru', { method: 'POST', body: JSON.stringify({ id, action: 'reset_face' }) });
+        await fetch('/api/guru', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, action: 'reset_face' })
+        });
         loadGuruData();
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data wajah guru telah direset.', timer: 1500, showConfirmButton: false });
     }
@@ -589,7 +604,11 @@ async function deleteGuru(id) {
     });
 
     if (result.isConfirmed) {
-        await fetch('/api/guru', { method: 'POST', body: JSON.stringify({ id, action: 'delete' }) });
+        await fetch('/api/guru', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, action: 'delete' })
+        });
         loadGuruData();
         Swal.fire({ icon: 'success', title: 'Terhapus!', text: 'Data guru telah dihapus.', timer: 1500, showConfirmButton: false });
     }
@@ -653,7 +672,11 @@ function renderAdminJadwal() {
             data.ANTI_FAKE_GPS = e.target.querySelector('[name="ANTI_FAKE_GPS"]').checked ? 'ON' : 'OFF';
         }
 
-        await fetch('/api/pengaturan', { method: 'POST', body: JSON.stringify(data) });
+        await fetch('/api/pengaturan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Pengaturan telah diperbarui.', timer: 1500, showConfirmButton: false });
         await fetchConfig(); renderAdminJadwal();
     };
@@ -728,7 +751,11 @@ function renderAdminRiwayat() {
 }
 
 async function approveIzin(id, status) {
-    await fetch('/api/approve_izin', { method: 'POST', body: JSON.stringify({ id, status }) });
+    await fetch('/api/approve_izin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status })
+    });
     renderAdminIzin();
 }
 
@@ -849,6 +876,7 @@ async function handleAbsen() {
         try {
             const res = await fetch('/api/absen', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     guru_id: state.user.id,
                     lat: latitude,

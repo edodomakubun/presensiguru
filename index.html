@@ -91,6 +91,11 @@
             justify-content: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
+        /* Mirror Camera for Front Facing */
+        video {
+            transform: scaleX(-1);
+            -webkit-transform: scaleX(-1);
+        }
     </style>
 </head>
 <body class="overflow-x-hidden selection:bg-blue-100">
