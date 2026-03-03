@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absensi SDN Leling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body class="text-white overflow-x-hidden">
+    <!-- Decorative background elements -->
+    <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/30 rounded-full blur-[100px] -z-10"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/30 rounded-full blur-[100px] -z-10"></div>
+    <div class="fixed top-[20%] right-[10%] w-[20%] h-[20%] bg-pink-500/20 rounded-full blur-[80px] -z-10"></div>
+
+    <div id="app" class="container mx-auto px-4 py-8 max-w-4xl min-h-screen relative z-10">
+        <!-- Content will be injected here -->
+        <div class="flex items-center justify-center min-h-[80vh]">
+            <div class="glass p-8 text-center">
+                <h1 class="text-3xl font-bold mb-4">Memuat Aplikasi...</h1>
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mx-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
