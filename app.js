@@ -29,14 +29,45 @@ async function init() {
 }
 
 async function loadFaceModels() {
+    const loader = document.getElementById('aiLoader');
+    const bar = document.getElementById('aiProgressBar');
+    const text = document.getElementById('aiProgressText');
+
+    // List file model dan ukurannya (estimasi untuk progres)
+    const models = [
+        'tiny_face_detector_model-weights_manifest.json',
+        'tiny_face_detector_model-shard1',
+        'face_landmark_68_model-weights_manifest.json',
+        'face_landmark_68_model-shard1',
+        'face_recognition_model-weights_manifest.json',
+        'face_recognition_model-shard1',
+        'face_recognition_model-shard2'
+    ];
+
+    if (state.modelsLoaded) return;
+
+    loader.style.display = 'flex';
+    let loaded = 0;
+
     try {
+        for (const model of models) {
+            await fetch(`/models/${model}`);
+            loaded++;
+            const percent = Math.round((loaded / models.length) * 100);
+            bar.style.width = percent + '%';
+            text.innerText = percent + '% SELESAI';
+        }
+
         await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
         await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
         await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+
         state.modelsLoaded = true;
-        console.log("AI Models Loaded");
+        loader.style.opacity = '0';
+        setTimeout(() => loader.style.display = 'none', 500);
     } catch (e) {
         console.error("Gagal memuat model AI", e);
+        Swal.fire({ icon: 'error', title: 'Gagal Memuat AI', text: 'Koneksi internet lambat atau terputus. Mohon refresh halaman.' });
     }
 }
 
@@ -62,7 +93,7 @@ function renderFaceRegistration() {
 
             <div class="m3-card overflow-hidden relative w-full aspect-square max-w-[300px] mb-8 bg-black">
                 <video id="faceVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                <canvas id="faceCanvas" class="absolute inset-0 w-full h-full"></canvas>
+                <canvas id="faceCanvas" class="absolute inset-0 w-full h-full pointer-events-none" style="transform: scaleX(-1);"></canvas>
             </div>
 
             <button id="btnRegisterFace" class="w-full m3-btn-filled py-4 text-lg">MULAI PINDAI</button>
@@ -107,6 +138,8 @@ function renderFaceRegistration() {
                         })
                     });
 
+                    const saveResult = await res.json();
+
                     if (res.ok) {
                         stream.getTracks().forEach(track => track.stop());
                         state.user.isFaceRegistered = true;
@@ -114,6 +147,11 @@ function renderFaceRegistration() {
                         Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Wajah Anda telah terdaftar.', timer: 2000, showConfirmButton: false });
                         setTimeout(() => init(), 2000);
                     } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Simpan',
+                            text: 'Pesan Server: ' + (saveResult.error || 'Terjadi kesalahan pada database.')
+                        });
                         status.innerText = 'Gagal menyimpan data wajah.';
                         btn.disabled = false;
                         btn.innerText = 'COBA LAGI';
