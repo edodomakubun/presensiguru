@@ -1,6 +1,6 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
-  const { guru_id, lat, lng } = await request.json();
+  const { guru_id, lat, lng, accuracy } = await request.json();
 
   // Get Settings
   const configRaw = await env.DB.prepare("SELECT * FROM pengaturan").all();
@@ -23,6 +23,13 @@ export async function onRequestPost(context) {
   }
 
   // Location Validation
+  // Anti Fake GPS Validation
+  if (config.ANTI_FAKE_GPS === 'ON') {
+    if (accuracy && accuracy < 1) {
+      return new Response(JSON.stringify({ error: "Terdeteksi Fake GPS (Akurasi Terlalu Sempurna)" }), { status: 400 });
+    }
+  }
+
   const distance = calculateDistance(lat, lng, parseFloat(config.LOKASI_SEKOLAH_LAT), parseFloat(config.LOKASI_SEKOLAH_LNG));
   if (distance > parseFloat(config.RADIUS_METER)) {
     return new Response(JSON.stringify({ error: "Anda berada di luar radius sekolah (" + Math.round(distance) + "m)" }), { status: 400 });

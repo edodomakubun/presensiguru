@@ -12,6 +12,7 @@ INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('JAM_TERLAMBAT_SELESAI', '
 INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('JAM_PULANG_MULAI', '11:00');
 INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('JAM_PULANG_SELESAI', '14:50');
 INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('HARI_LIBUR', '[]');
+INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('ANTI_FAKE_GPS', 'OFF');
 INSERT OR IGNORE INTO guru (id, pin, nama, role) VALUES ('sdinleling@admin', 'Admin123', 'Administrator', 'admin');
 INSERT OR IGNORE INTO guru (id, pin, nama, role) VALUES ('G001', '4821', 'Miryam Yuliana Lololuan.S.PdK', 'guru');
 INSERT OR IGNORE INTO guru (id, pin, nama, role) VALUES ('G002', '1234', 'Wanti Slarmanat.S.Pd', 'guru');

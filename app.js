@@ -483,6 +483,16 @@ function renderAdminJadwal() {
                     <h3 class="font-bold text-xs text-gray-400 uppercase">Geofencing</h3>
                     <input type="text" name="LOKASI_SEKOLAH_LAT" value="${state.config.LOKASI_SEKOLAH_LAT}" class="w-full bg-gray-50 p-3 rounded-xl text-xs border border-gray-200">
                     <input type="text" name="LOKASI_SEKOLAH_LNG" value="${state.config.LOKASI_SEKOLAH_LNG}" class="w-full bg-gray-50 p-3 rounded-xl text-xs border border-gray-200">
+                    <div class="flex items-center justify-between p-4 bg-blue-50 rounded-2xl border border-blue-100 mt-2">
+                        <div>
+                            <p class="text-[10px] font-black text-blue-900 uppercase">Anti Fake GPS</p>
+                            <p class="text-[8px] text-blue-700 font-bold uppercase">Cegah Lokasi Palsu</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="ANTI_FAKE_GPS" class="sr-only peer" ${state.config.ANTI_FAKE_GPS === 'ON' ? 'checked' : ''}>
+                            <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
                 </div>
                 <button type="submit" class="w-full m3-btn-tonal">Simpan Lokasi</button>
             </form>
@@ -492,6 +502,12 @@ function renderAdminJadwal() {
         e.preventDefault();
         const fd = new FormData(e.target);
         const data = Object.fromEntries(fd.entries());
+
+        // Handle Checkbox
+        if (e.target.id === 'lokasiForm') {
+            data.ANTI_FAKE_GPS = e.target.querySelector('[name="ANTI_FAKE_GPS"]').checked ? 'ON' : 'OFF';
+        }
+
         await fetch('/api/pengaturan', { method: 'POST', body: JSON.stringify(data) });
         alert('Tersimpan!'); await fetchConfig(); renderAdminJadwal();
     };
@@ -597,12 +613,33 @@ async function handleAbsen() {
     if (!navigator.geolocation) { alert("GPS Tidak Tersedia."); btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI'; return; }
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
-        const { latitude, longitude } = pos.coords;
+        const { latitude, longitude, accuracy } = pos.coords;
+
+        // Anti-Fake GPS Detection Logic (Standard Web API)
+        let isMock = false;
+        if (state.config.ANTI_FAKE_GPS === 'ON') {
+            // Check for accuracy that is too perfect (e.g. 0 or exactly the same)
+            // Note: Modern browsers don't expose 'mocked' flag easily,
+            // but we can check for common patterns.
+            if (accuracy < 1) isMock = true;
+
+            // Check if coordinates have more than 10 decimal places (common in fake apps)
+            const latStr = latitude.toString();
+            const lngStr = longitude.toString();
+            if (latStr.split('.')[1]?.length > 13 || lngStr.split('.')[1]?.length > 13) isMock = true;
+        }
+
+        if (isMock) {
+            alert("Terdeteksi penggunaan Fake GPS! Harap gunakan lokasi asli.");
+            btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI';
+            return;
+        }
+
         btn.innerText = 'MEMPROSES DATA...';
         try {
             const res = await fetch('/api/absen', {
                 method: 'POST',
-                body: JSON.stringify({ guru_id: state.user.id, lat: latitude, lng: longitude })
+                body: JSON.stringify({ guru_id: state.user.id, lat: latitude, lng: longitude, accuracy })
             });
             const data = await res.json();
             recentStatus.classList.remove('hidden');
