@@ -1,7 +1,8 @@
 const state = {
     user: JSON.parse(localStorage.getItem('user')) || null,
     config: {},
-    currentPage: 'login'
+    currentPage: 'login',
+    activeTab: 'home'
 };
 
 const app = document.getElementById('app');
@@ -27,8 +28,9 @@ async function fetchConfig() {
 }
 
 // Router
-function navigate(page) {
+function navigate(page, tab = 'home') {
     state.currentPage = page;
+    state.activeTab = tab;
     render();
 }
 
@@ -42,6 +44,7 @@ function render() {
         case 'admin_dashboard': renderAdminDashboard(); break;
         case 'izin_guru': renderIzinGuru(); break;
         case 'riwayat_guru': renderRiwayatGuru(); break;
+        // Admin pages reuse standard layout for simplicity but with new style
         case 'admin_guru': renderAdminGuru(); break;
         case 'admin_jadwal': renderAdminJadwal(); break;
         case 'admin_izin': renderAdminIzin(); break;
@@ -49,33 +52,30 @@ function render() {
     }
 }
 
-// UI Components
+// Android 15 Style Components
 function renderLogin() {
     app.innerHTML = `
-        <div class="flex items-center justify-center min-h-[80vh]">
-            <div class="glass p-10 w-full max-w-md">
-                <div class="text-center mb-10">
-                    <div class="bg-indigo-500/10 w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-indigo-500/20 shadow-xl">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                    </div>
-                    <h1 class="text-3xl font-extrabold tracking-tight mb-2">SDN Leling</h1>
-                    <p class="text-slate-400 text-sm font-medium">Digital Attendance Portal</p>
-                </div>
-                <form id="loginForm" class="space-y-6">
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">ID PENGGUNA</label>
-                        <input type="text" id="loginId" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-indigo-500 transition-all text-sm" placeholder="ID Anda" required>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">PIN KEAMANAN</label>
-                        <input type="password" id="loginPin" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-indigo-500 transition-all text-sm" placeholder="••••" required>
-                    </div>
-                    <button type="submit" class="w-full btn-rich text-white font-bold py-4 rounded-2xl transition shadow-lg mt-2">MASUK SISTEM</button>
-                    <div id="loginError" class="text-red-400 text-xs font-medium text-center hidden"></div>
-                </form>
+        <div class="flex flex-col items-center justify-center min-h-screen px-6 bg-[#f7f9fc]">
+            <div class="w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center mb-8 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-[#3f5f91]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
             </div>
+            <h1 class="text-3xl font-extrabold text-[#1a1c1e] mb-1">PresensiSaya</h1>
+            <p class="text-gray-500 mb-10 font-medium">Masuk ke akun Anda</p>
+
+            <form id="loginForm" class="w-full space-y-4">
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-gray-700 ml-1">ID Pengguna</label>
+                    <input type="text" id="loginId" class="w-full bg-white border border-gray-300 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-lg" placeholder="Masukkan ID" required>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-gray-700 ml-1">PIN Keamanan</label>
+                    <input type="password" id="loginPin" class="w-full bg-white border border-gray-300 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-lg" placeholder="••••" required>
+                </div>
+                <button type="submit" class="w-full m3-btn-filled mt-6 py-5 text-lg">MASUK</button>
+                <div id="loginError" class="text-red-600 text-sm font-bold text-center mt-4 hidden"></div>
+            </form>
         </div>
     `;
 
@@ -109,339 +109,334 @@ function renderLogin() {
             err.classList.remove('hidden');
         } finally {
             btn.disabled = false;
-            btn.innerText = 'MASUK SISTEM';
+            btn.innerText = 'MASUK';
         }
     };
 }
 
 function renderGuruDashboard() {
     app.innerHTML = `
-        <header class="flex justify-between items-end mb-12 px-2">
-            <div>
-                <p class="text-indigo-400 text-xs font-bold uppercase tracking-widest mb-1">DASHBOARD GURU</p>
-                <h1 class="text-2xl font-bold">${state.user.nama}</h1>
-            </div>
-            <button onclick="logout()" class="text-slate-400 text-xs font-bold hover:text-white transition uppercase tracking-widest bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50">LOGOUT</button>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Clock Card -->
-            <div class="glass p-8 md:col-span-2 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-32 w-32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                     </svg>
+        <div class="px-6 pt-10">
+            <header class="flex justify-between items-start mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-[#1a1c1e]">Hai, ${state.user.nama.split(' ')[0]} 👋</h1>
+                    <p class="text-gray-500 font-medium">Bagaimana harimu?</p>
                 </div>
-                <div class="relative z-10">
-                    <p id="date" class="text-indigo-300 font-semibold mb-2 uppercase tracking-widest text-xs">Memuat...</p>
-                    <div id="clock" class="text-6xl font-black mb-8 tracking-tighter">00:00:00</div>
+                <button onclick="logout()" class="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </header>
 
-                    <button onclick="handleAbsen()" id="btnAbsen" class="w-full btn-rich text-white font-extrabold py-5 rounded-2xl shadow-xl transition-all active:scale-[0.98] text-lg tracking-wide uppercase">
-                        Konfirmasi Kehadiran
-                    </button>
-                    <p class="text-[10px] text-center text-slate-500 mt-4 uppercase font-bold tracking-widest">Sistem Geofencing Aktif - Radius 20m</p>
+            <div class="m3-card p-6 mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <p id="date" class="text-sm font-bold text-[#3f5f91] uppercase tracking-wider mb-1">MEMUAT...</p>
+                        <div id="clock" class="text-4xl font-black text-[#1a1c1e]">00:00:00</div>
+                    </div>
+                    <div class="m3-fab">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                         </svg>
+                    </div>
                 </div>
+
+                <div class="bg-gray-50 rounded-2xl p-4 flex items-center justify-between mb-8 border border-gray-100">
+                    <div class="flex items-center">
+                         <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                              </svg>
+                         </div>
+                         <div class="text-xs font-bold text-gray-500 uppercase">Status Lokasi</div>
+                    </div>
+                    <div class="text-xs font-black text-green-600 uppercase">Aktif (20m)</div>
+                </div>
+
+                <button onclick="handleAbsen()" id="btnAbsen" class="w-full m3-btn-filled py-5 text-lg uppercase tracking-wider shadow-lg">KONFIRMASI PRESENSI</button>
             </div>
 
-            <!-- Quick Stats -->
-            <div class="flex flex-col gap-6">
-                <button onclick="navigate('izin_guru')" class="glass p-8 flex flex-col items-start justify-center hover:bg-white/5 transition group">
-                    <div class="bg-indigo-500/10 p-3 rounded-2xl mb-4 group-hover:bg-indigo-500/20 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                    <span class="font-bold text-sm mb-1">Izin / Sakit</span>
-                    <span class="text-xs text-slate-400">Ajukan surat izin</span>
-                </button>
-                <button onclick="navigate('riwayat_guru')" class="glass p-8 flex flex-col items-start justify-center hover:bg-white/5 transition group">
-                    <div class="bg-indigo-500/10 p-3 rounded-2xl mb-4 group-hover:bg-indigo-500/20 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <span class="font-bold text-sm mb-1">Riwayat</span>
-                    <span class="text-xs text-slate-400">Log kehadiran Anda</span>
-                </button>
+            <h2 class="font-bold text-lg mb-4 text-[#1a1c1e]">Presensi Saya</h2>
+            <div id="recentStatus" class="mb-4 hidden animate-in fade-in slide-in-from-top-4 duration-300"></div>
+
+            <div id="todayLog" class="m3-card p-5">
+                <p class="text-center text-gray-400 text-sm font-medium py-4">Menunggu presensi hari ini...</p>
             </div>
         </div>
 
-        <div id="statusMessage" class="mt-6 hidden animate-bounce"></div>
+        <!-- Android Bottom Nav -->
+        <nav class="m3-bottom-nav">
+            <button onclick="navigate('guru_dashboard', 'home')" class="m3-nav-item ${state.activeTab === 'home' ? 'active' : ''}">
+                <div class="icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="${state.activeTab === 'home' ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                </div>
+                <span>Home</span>
+            </button>
+            <button onclick="navigate('izin_guru', 'izin')" class="m3-nav-item ${state.activeTab === 'izin' ? 'active' : ''}">
+                <div class="icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="${state.activeTab === 'izin' ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <span>Izin</span>
+            </button>
+            <button onclick="navigate('riwayat_guru', 'history')" class="m3-nav-item ${state.activeTab === 'history' ? 'active' : ''}">
+                <div class="icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="${state.activeTab === 'history' ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <span>Riwayat</span>
+            </button>
+        </nav>
     `;
     startClock();
+    fetchTodayLog();
+}
+
+async function fetchTodayLog() {
+    const res = await fetch(`/api/riwayat?guru_id=${state.user.id}`);
+    const data = await res.json();
+    const today = new Date().toLocaleDateString('id-ID');
+    const logs = data.filter(r => r.timestamp.includes(today));
+
+    if (logs.length > 0) {
+        document.getElementById('todayLog').innerHTML = logs.map(l => `
+            <div class="flex items-center justify-between border-b border-gray-100 last:border-0 py-3">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 ${l.status === 'Hadir' ? 'bg-green-100 text-green-600' : l.status === 'Terlambat' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'} rounded-lg flex items-center justify-center mr-3">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                         </svg>
+                    </div>
+                    <div class="text-sm font-bold text-[#1a1c1e]">${l.status}</div>
+                </div>
+                <div class="text-xs font-bold text-gray-400">${l.timestamp.split(',')[1] || ''}</div>
+            </div>
+        `).join('');
+    }
 }
 
 function renderIzinGuru() {
-    app.innerHTML = `
-        <div class="mb-10 flex items-center">
-            <button onclick="navigate('guru_dashboard')" class="mr-6 p-3 glass rounded-2xl hover:bg-white/5 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
-            <h1 class="text-3xl font-bold tracking-tight">Pengajuan Izin</h1>
-        </div>
+    renderGuruDashboard(); // Keep layout
+    const content = document.querySelector('.px-6.pt-10');
+    content.innerHTML = `
+        <header class="mb-8">
+            <h1 class="text-2xl font-bold text-[#1a1c1e]">Ajukan Izin</h1>
+            <p class="text-gray-500 font-medium">Lengkapi dokumen presensi</p>
+        </header>
 
-        <div class="glass p-10 max-w-2xl mx-auto">
-            <form id="izinForm" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">TANGGAL</label>
-                        <input type="date" id="izinTanggal" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-5 py-3 focus:outline-none focus:border-indigo-500 transition text-sm" required>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">JENIS</label>
-                        <select id="izinJenis" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-5 py-3 focus:outline-none focus:border-indigo-500 transition text-sm" required>
-                            <option value="Sakit">Sakit (Medis)</option>
-                            <option value="Izin">Izin (Keperluan)</option>
-                        </select>
-                    </div>
+        <form id="izinForm" class="space-y-6">
+            <div class="m3-card p-6 space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase ml-1">Tanggal</label>
+                    <input type="date" id="izinTanggal" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600/20" required>
                 </div>
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">ALASAN / KETERANGAN</label>
-                    <textarea id="izinAlasan" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-5 py-3 focus:outline-none focus:border-indigo-500 transition text-sm" rows="4" placeholder="Tuliskan alasan singkat..." required></textarea>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase ml-1">Jenis Izin</label>
+                    <select id="izinJenis" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600/20" required>
+                        <option value="Sakit">Sakit</option>
+                        <option value="Izin">Izin Keperluan</option>
+                    </select>
                 </div>
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">DOKUMEN PENDUKUNG (FOTO)</label>
-                    <div class="relative group">
-                        <input type="file" id="izinFoto" accept="image/*" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-5 py-3 focus:outline-none focus:border-indigo-500 transition text-sm file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20" required>
-                    </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase ml-1">Alasan</label>
+                    <textarea id="izinAlasan" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600/20" rows="3" placeholder="Ketik alasan..." required></textarea>
                 </div>
-                <button type="submit" class="w-full btn-rich text-white font-bold py-4 rounded-2xl transition shadow-lg mt-4">KIRIM DOKUMEN</button>
-            </form>
-        </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase ml-1">Unggah Surat (FOTO)</label>
+                    <input type="file" id="izinFoto" accept="image/*" class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-[#3f5f91]" required>
+                </div>
+            </div>
+            <button type="submit" class="w-full m3-btn-filled py-4 text-lg">KIRIM PENGAJUAN</button>
+        </form>
     `;
 
     document.getElementById('izinForm').onsubmit = async (e) => {
         e.preventDefault();
         const btn = e.target.querySelector('button');
-        btn.disabled = true;
-        btn.innerText = 'MENGIRIM...';
-
+        btn.disabled = true; btn.innerText = 'MENGIRIM...';
         const formData = new FormData();
         formData.append('guru_id', state.user.id);
         formData.append('tanggal', document.getElementById('izinTanggal').value);
         formData.append('jenis', document.getElementById('izinJenis').value);
         formData.append('alasan', document.getElementById('izinAlasan').value);
         formData.append('foto', document.getElementById('izinFoto').files[0]);
-
         try {
             const res = await fetch('/api/izin', { method: 'POST', body: formData });
-            if (res.ok) {
-                alert("Pengajuan berhasil dikirim. Menunggu verifikasi admin.");
-                navigate('guru_dashboard');
-            } else alert("Gagal mengirim data.");
-        } catch (e) { alert("Masalah jaringan."); }
-        finally { btn.disabled = false; btn.innerText = 'KIRIM DOKUMEN'; }
+            if (res.ok) { alert("Berhasil dikirim!"); navigate('guru_dashboard', 'home'); }
+            else alert("Gagal!");
+        } catch (e) { alert("Masalah koneksi."); }
+        finally { btn.disabled = false; btn.innerText = 'KIRIM PENGAJUAN'; }
     };
 }
 
 function renderRiwayatGuru() {
-    app.innerHTML = `
-        <div class="mb-10 flex items-center">
-            <button onclick="navigate('guru_dashboard')" class="mr-6 p-3 glass rounded-2xl hover:bg-white/5 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
-            <h1 class="text-3xl font-bold tracking-tight">Log Kehadiran</h1>
-        </div>
-        <div class="glass overflow-hidden border border-slate-700/50 shadow-2xl">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="bg-indigo-500/10">
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest">Waktu Presensi</th>
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest">Keterangan</th>
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest text-right">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="riwayatBody"></tbody>
-            </table>
+    renderGuruDashboard(); // Keep layout
+    const content = document.querySelector('.px-6.pt-10');
+    content.innerHTML = `
+        <header class="mb-8">
+            <h1 class="text-2xl font-bold text-[#1a1c1e]">Riwayat Presensi</h1>
+            <p class="text-gray-500 font-medium">Log aktivitas kehadiran Anda</p>
+        </header>
+
+        <div id="riwayatList" class="space-y-4">
+            <p class="text-center py-10 text-gray-400 font-medium">Memuat...</p>
         </div>
     `;
 
     fetch(`/api/riwayat?guru_id=${state.user.id}`)
         .then(res => res.json())
         .then(data => {
-            const body = document.getElementById('riwayatBody');
-            if (data.length === 0) {
-                body.innerHTML = '<tr><td colspan="3" class="p-10 text-center text-slate-500 font-medium">Belum ada riwayat tercatat.</td></tr>';
-                return;
-            }
-            body.innerHTML = data.map(row => `
-                <tr class="border-t border-slate-700/50 hover:bg-white/5 transition">
-                    <td class="p-5">
-                        <div class="text-sm font-bold text-slate-200">${row.timestamp.split(',')[0]}</div>
-                        <div class="text-xs text-slate-400 font-medium">${row.timestamp.split(',')[1] || ''}</div>
-                    </td>
-                    <td class="p-5 text-sm text-slate-400 font-medium">${row.keterangan}</td>
-                    <td class="p-5 text-right">
-                        <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${row.status === 'Hadir' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : row.status === 'Terlambat' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}">
-                            ${row.status}
-                        </span>
-                    </td>
-                </tr>
+            const list = document.getElementById('riwayatList');
+            if (data.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 py-10">Belum ada data.</p>'; return; }
+            list.innerHTML = data.map(r => `
+                <div class="m3-card p-4 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 ${r.status === 'Hadir' ? 'bg-green-100 text-green-600' : r.status === 'Terlambat' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'} rounded-2xl flex items-center justify-center mr-4">
+                             <span class="text-xs font-black uppercase">${r.status.substring(0, 1)}</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-[#1a1c1e]">${r.timestamp.split(',')[0]}</p>
+                            <p class="text-[10px] text-gray-500 font-bold uppercase">${r.keterangan}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                         <p class="text-xs font-black text-[#1a1c1e]">${r.timestamp.split(',')[1] || ''}</p>
+                         <p class="text-[9px] text-gray-400 font-bold uppercase">${r.status}</p>
+                    </div>
+                </div>
             `).join('');
         });
 }
 
-// ADMIN PAGES (Simplified Rich Style)
+// ADMIN PAGES (Stay with Light Mode & Material Design)
 function renderAdminDashboard() {
     app.innerHTML = `
-        <header class="flex justify-between items-end mb-12 px-2">
-            <div>
-                <p class="text-indigo-400 text-xs font-bold uppercase tracking-widest mb-1">PANEL ADMINISTRATOR</p>
-                <h1 class="text-2xl font-bold">Ringkasan Sistem</h1>
+        <div class="px-6 pt-10">
+            <header class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-[#1a1c1e]">Panel Admin</h1>
+                    <p class="text-gray-500 font-medium">Manajemen PresensiSaya</p>
+                </div>
+                <button onclick="logout()" class="p-2 bg-gray-100 rounded-full">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </header>
+
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <button onclick="navigate('admin_guru')" class="m3-card p-5 text-center flex flex-col items-center">
+                    <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center mb-3">👨‍🏫</div>
+                    <span class="text-xs font-bold text-gray-700">Data Guru</span>
+                </button>
+                <button onclick="navigate('admin_jadwal')" class="m3-card p-5 text-center flex flex-col items-center">
+                    <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mb-3">⚙️</div>
+                    <span class="text-xs font-bold text-gray-700">Pengaturan</span>
+                </button>
+                <button onclick="navigate('admin_izin')" class="m3-card p-5 text-center flex flex-col items-center">
+                    <div class="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center mb-3">📩</div>
+                    <span class="text-xs font-bold text-gray-700">Verifikasi</span>
+                </button>
+                <button onclick="navigate('admin_riwayat')" class="m3-card p-5 text-center flex flex-col items-center">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mb-3">📋</div>
+                    <span class="text-xs font-bold text-gray-700">Laporan</span>
+                </button>
             </div>
-            <button onclick="logout()" class="text-slate-400 text-xs font-bold hover:text-white transition uppercase tracking-widest bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50">LOGOUT</button>
-        </header>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-            <button onclick="navigate('admin_guru')" class="glass p-8 text-left hover:bg-white/5 transition group">
-                <div class="bg-indigo-500/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                    <span class="text-xl">👨‍🏫</span>
-                </div>
-                <div class="font-bold text-sm">Kelola Guru</div>
-            </button>
-            <button onclick="navigate('admin_jadwal')" class="glass p-8 text-left hover:bg-white/5 transition group">
-                <div class="bg-indigo-500/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                    <span class="text-xl">⚙️</span>
-                </div>
-                <div class="font-bold text-sm">Konfigurasi</div>
-            </button>
-            <button onclick="navigate('admin_izin')" class="glass p-8 text-left hover:bg-white/5 transition group">
-                <div class="bg-indigo-500/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                    <span class="text-xl">📩</span>
-                </div>
-                <div class="font-bold text-sm">Verifikasi Izin</div>
-            </button>
-            <button onclick="navigate('admin_riwayat')" class="glass p-8 text-left hover:bg-white/5 transition group">
-                <div class="bg-indigo-500/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                    <span class="text-xl">📋</span>
-                </div>
-                <div class="font-bold text-sm">Laporan</div>
-            </button>
-        </div>
-
-        <div class="glass p-10 relative overflow-hidden">
-            <h2 class="text-lg font-bold mb-8 flex items-center">
-                <span class="w-2 h-2 bg-indigo-500 rounded-full mr-3 animate-pulse"></span>
-                Status Kehadiran Hari Ini
-            </h2>
-            <div id="adminSummary" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="p-8 card-rich rounded-3xl text-center">
-                     <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Tepat Waktu</p>
-                     <p class="text-4xl font-black text-white">-</p>
-                </div>
-                <div class="p-8 card-rich rounded-3xl text-center">
-                     <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Terlambat</p>
-                     <p class="text-4xl font-black text-white">-</p>
-                </div>
+            <div class="m3-card p-6">
+                 <h3 class="font-bold text-sm text-gray-500 uppercase tracking-widest mb-4">Ringkasan Hari Ini</h3>
+                 <div id="adminSummary" class="flex gap-4">
+                      <div class="flex-1 bg-green-50 rounded-2xl p-4 text-center">
+                           <div class="text-2xl font-black text-green-600">-</div>
+                           <div class="text-[10px] font-bold text-green-800 uppercase">Hadir</div>
+                      </div>
+                      <div class="flex-1 bg-amber-50 rounded-2xl p-4 text-center">
+                           <div class="text-2xl font-black text-amber-600">-</div>
+                           <div class="text-[10px] font-bold text-amber-800 uppercase">Telat</div>
+                      </div>
+                 </div>
             </div>
         </div>
     `;
-
-    fetch('/api/riwayat')
-        .then(res => res.json())
-        .then(data => {
-            const today = new Date().toLocaleDateString('id-ID');
-            const filtered = data.filter(r => r.timestamp.includes(today));
-            document.getElementById('adminSummary').innerHTML = `
-                <div class="p-8 card-rich rounded-3xl text-center">
-                     <p class="text-green-500 text-[10px] font-black uppercase tracking-widest mb-2">Hadir Tepat Waktu</p>
-                     <p class="text-5xl font-black text-white">${filtered.filter(r => r.status === 'Hadir').length}</p>
-                </div>
-                <div class="p-8 card-rich rounded-3xl text-center">
-                     <p class="text-amber-500 text-[10px] font-black uppercase tracking-widest mb-2">Terlambat</p>
-                     <p class="text-5xl font-black text-white">${filtered.filter(r => r.status === 'Terlambat').length}</p>
-                </div>
-            `;
-        });
+    fetch('/api/riwayat').then(res => res.json()).then(data => {
+        const today = new Date().toLocaleDateString('id-ID');
+        const filtered = data.filter(r => r.timestamp.includes(today));
+        document.getElementById('adminSummary').innerHTML = `
+            <div class="flex-1 bg-green-50 rounded-2xl p-4 text-center border border-green-100">
+                 <div class="text-3xl font-black text-green-600">${filtered.filter(r => r.status === 'Hadir').length}</div>
+                 <div class="text-[10px] font-bold text-green-800 uppercase">Hadir</div>
+            </div>
+            <div class="flex-1 bg-amber-50 rounded-2xl p-4 text-center border border-amber-100">
+                 <div class="text-3xl font-black text-amber-600">${filtered.filter(r => r.status === 'Terlambat').length}</div>
+                 <div class="text-[10px] font-bold text-amber-800 uppercase">Telat</div>
+            </div>
+        `;
+    });
 }
 
-// OTHER ADMIN COMPONENTS UPDATED TO RICH STYLE
+// ADAPTING OTHER ADMIN PAGES TO LIGHT M3 STYLE
 function renderAdminGuru() {
     app.innerHTML = `
-        <div class="mb-10 flex items-center justify-between">
-            <div class="flex items-center">
-                <button onclick="navigate('admin_dashboard')" class="mr-6 p-3 glass rounded-2xl hover:bg-white/5 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+        <div class="px-6 pt-10">
+            <header class="flex items-center mb-8">
+                <button onclick="navigate('admin_dashboard')" class="p-2 mr-3 bg-gray-100 rounded-full">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
                     </svg>
                 </button>
-                <h1 class="text-3xl font-bold tracking-tight">Data Guru</h1>
-            </div>
-            <button onclick="showGuruModal()" class="btn-rich text-white px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest">+ Guru Baru</button>
+                <h1 class="text-2xl font-bold">Data Guru</h1>
+            </header>
+
+            <button onclick="showGuruModal()" class="w-full m3-btn-tonal mb-6">+ Tambah Guru Baru</button>
+
+            <div id="guruList" class="space-y-3"></div>
         </div>
 
-        <div class="glass overflow-hidden shadow-2xl">
-            <table class="w-full text-left">
-                <thead class="bg-indigo-500/10">
-                    <tr>
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest">Username</th>
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest">Nama Lengkap</th>
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest text-right">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="guruTableBody"></tbody>
-            </table>
-        </div>
-
-        <div id="guruModal" class="fixed inset-0 bg-slate-950/80 hidden flex items-center justify-center p-6 z-[100] backdrop-blur-sm">
-            <div class="glass p-10 w-full max-w-md">
-                <h3 class="text-2xl font-bold mb-8">Tambah Guru</h3>
-                <form id="guruForm" class="space-y-6">
-                    <input type="hidden" id="oldId">
-                    <div class="space-y-1.5">
-                        <label class="block text-[10px] font-black text-slate-500 tracking-widest">USERNAME / ID</label>
-                        <input type="text" id="guruId" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-indigo-500 transition text-sm" required>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-[10px] font-black text-slate-500 tracking-widest">NAMA LENGKAP</label>
-                        <input type="text" id="guruNama" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-indigo-500 transition text-sm" required>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-[10px] font-black text-slate-500 tracking-widest">PIN AKSES</label>
-                        <input type="text" id="guruPin" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-indigo-500 transition text-sm" required>
-                    </div>
-                    <div class="flex gap-4 pt-4">
-                        <button type="button" onclick="closeGuruModal()" class="flex-1 bg-slate-800 text-slate-400 font-bold py-4 rounded-2xl text-xs tracking-widest">BATAL</button>
-                        <button type="submit" class="flex-1 btn-rich text-white font-bold py-4 rounded-2xl text-xs tracking-widest">SIMPAN</button>
+        <!-- Modal (Light) -->
+        <div id="guruModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-6 z-[100] backdrop-blur-sm">
+            <div class="bg-white p-10 w-full max-w-sm rounded-[32px] shadow-2xl">
+                <h3 class="text-xl font-black mb-6">Profil Guru</h3>
+                <form id="guruForm" class="space-y-4">
+                    <input type="text" id="guruId" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3 text-sm focus:outline-none" placeholder="ID / Username" required>
+                    <input type="text" id="guruNama" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3 text-sm focus:outline-none" placeholder="Nama Lengkap" required>
+                    <input type="text" id="guruPin" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3 text-sm focus:outline-none" placeholder="PIN" required>
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" onclick="closeGuruModal()" class="flex-1 py-3 text-sm font-bold text-gray-500">Batal</button>
+                        <button type="submit" class="flex-1 m3-btn-tonal">Simpan</button>
                     </div>
                 </form>
             </div>
         </div>
     `;
     loadGuruData();
-
     document.getElementById('guruForm').onsubmit = async (e) => {
         e.preventDefault();
-        const payload = {
-            id: document.getElementById('guruId').value,
-            nama: document.getElementById('guruNama').value,
-            pin: document.getElementById('guruPin').value
-        };
+        const payload = { id: document.getElementById('guruId').value, nama: document.getElementById('guruNama').value, pin: document.getElementById('guruPin').value };
         await fetch('/api/guru', { method: 'POST', body: JSON.stringify(payload) });
-        closeGuruModal();
-        loadGuruData();
+        closeGuruModal(); loadGuruData();
     };
 }
 
 async function loadGuruData() {
     const res = await fetch('/api/guru');
     const data = await res.json();
-    document.getElementById('guruTableBody').innerHTML = data.map(g => `
-        <tr class="border-t border-slate-700/50 hover:bg-white/5 transition">
-            <td class="p-5 font-bold text-sm text-slate-300">${g.id}</td>
-            <td class="p-5 text-sm text-slate-400">${g.nama}</td>
-            <td class="p-5 text-right">
-                <button onclick="deleteGuru('${g.id}')" class="text-red-500/50 hover:text-red-400 transition p-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
-            </td>
-        </tr>
+    document.getElementById('guruList').innerHTML = data.map(g => `
+        <div class="m3-card p-4 flex justify-between items-center">
+            <div>
+                <p class="font-bold text-[#1a1c1e]">${g.nama}</p>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${g.id}</p>
+            </div>
+            <button onclick="deleteGuru('${g.id}')" class="p-2 text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+        </div>
     `).join('');
 }
 
@@ -449,259 +444,130 @@ function showGuruModal() { document.getElementById('guruModal').classList.remove
 function closeGuruModal() { document.getElementById('guruModal').classList.add('hidden'); }
 
 async function deleteGuru(id) {
-    if (confirm('Permanen hapus data guru ini?')) {
+    if (confirm('Hapus guru ini?')) {
         await fetch('/api/guru', { method: 'POST', body: JSON.stringify({ id, action: 'delete' }) });
         loadGuruData();
     }
 }
 
-// REMAINING ADMIN PAGES (Simplified)
+// SIMPLIFIED REST OF ADMIN FOR LIGHT STYLE
 function renderAdminJadwal() {
     app.innerHTML = `
-        <div class="mb-10 flex items-center">
-            <button onclick="navigate('admin_dashboard')" class="mr-6 p-3 glass rounded-2xl hover:bg-white/5 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
-            <h1 class="text-3xl font-bold tracking-tight">Konfigurasi Sistem</h1>
-        </div>
+        <div class="px-6 pt-10">
+            <header class="flex items-center mb-8">
+                <button onclick="navigate('admin_dashboard')" class="p-2 mr-3 bg-gray-100 rounded-full">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <h1 class="text-2xl font-bold">Pengaturan</h1>
+            </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="glass p-10">
-                <h3 class="font-bold text-lg mb-8 text-indigo-400">Jam Operasional</h3>
-                <form id="jamForm" class="space-y-6">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-black text-slate-500 tracking-widest">MASUK MULAI</label>
-                            <input type="time" name="JAM_MASUK_MULAI" value="${state.config.JAM_MASUK_MULAI}" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 transition">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-black text-slate-500 tracking-widest">MASUK AKHIR</label>
-                            <input type="time" name="JAM_MASUK_SELESAI" value="${state.config.JAM_MASUK_SELESAI}" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 transition">
-                        </div>
+            <form id="jamForm" class="space-y-4 mb-6">
+                <div class="m3-card p-5 space-y-4">
+                    <h3 class="font-bold text-xs text-gray-400 uppercase">Jadwal Presensi</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="time" name="JAM_MASUK_MULAI" value="${state.config.JAM_MASUK_MULAI}" class="bg-gray-50 p-3 rounded-xl text-xs border border-gray-200">
+                        <input type="time" name="JAM_MASUK_SELESAI" value="${state.config.JAM_MASUK_SELESAI}" class="bg-gray-50 p-3 rounded-xl text-xs border border-gray-200">
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-black text-amber-500/70 tracking-widest">TELAT MULAI</label>
-                            <input type="time" name="JAM_TERLAMBAT_MULAI" value="${state.config.JAM_TERLAMBAT_MULAI}" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 transition">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-black text-amber-500/70 tracking-widest">TELAT AKHIR</label>
-                            <input type="time" name="JAM_TERLAMBAT_SELESAI" value="${state.config.JAM_TERLAMBAT_SELESAI}" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 transition">
-                        </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="time" name="JAM_PULANG_MULAI" value="${state.config.JAM_PULANG_MULAI}" class="bg-gray-50 p-3 rounded-xl text-xs border border-gray-200">
+                        <input type="time" name="JAM_PULANG_SELESAI" value="${state.config.JAM_PULANG_SELESAI}" class="bg-gray-50 p-3 rounded-xl text-xs border border-gray-200">
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-black text-blue-500/70 tracking-widest">PULANG MULAI</label>
-                            <input type="time" name="JAM_PULANG_MULAI" value="${state.config.JAM_PULANG_MULAI}" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 transition">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-black text-blue-500/70 tracking-widest">PULANG AKHIR</label>
-                            <input type="time" name="JAM_PULANG_SELESAI" value="${state.config.JAM_PULANG_SELESAI}" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 transition">
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full btn-rich text-white font-bold py-4 rounded-2xl text-xs tracking-widest mt-2">SIMPAN PERUBAHAN</button>
-                </form>
-            </div>
-
-            <div class="glass p-10">
-                <h3 class="font-bold text-lg mb-8 text-indigo-400">Koordinat Sekolah</h3>
-                <form id="lokasiForm" class="space-y-6">
-                    <div class="space-y-1.5">
-                        <label class="text-[10px] font-black text-slate-500 tracking-widest">LATITUDE</label>
-                        <input type="text" name="LOKASI_SEKOLAH_LAT" value="${state.config.LOKASI_SEKOLAH_LAT}" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 transition">
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="text-[10px] font-black text-slate-500 tracking-widest">LONGITUDE</label>
-                        <input type="text" name="LOKASI_SEKOLAH_LNG" value="${state.config.LOKASI_SEKOLAH_LNG}" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 transition">
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="text-[10px] font-black text-slate-500 tracking-widest">RADIUS DETEKSI (METER)</label>
-                        <input type="number" name="RADIUS_METER" value="${state.config.RADIUS_METER}" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 transition">
-                    </div>
-                    <button type="submit" class="w-full btn-rich text-white font-bold py-4 rounded-2xl text-xs tracking-widest mt-2">SIMPAN LOKASI</button>
-                </form>
-            </div>
-
-            <div class="glass p-10 md:col-span-2">
-                <h3 class="font-bold text-lg mb-8 text-indigo-400">Kalender Hari Libur</h3>
-                <div class="flex gap-4 mb-8">
-                    <input type="date" id="newLibur" class="flex-1 bg-slate-900/50 border border-slate-700/50 rounded-2xl px-5 py-3 text-sm focus:border-indigo-500 transition">
-                    <button onclick="addLibur()" class="bg-indigo-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] tracking-widest uppercase">TAMBAH</button>
                 </div>
-                <div id="liburList" class="flex flex-wrap gap-3"></div>
-            </div>
+                <button type="submit" class="w-full m3-btn-tonal">Simpan Jadwal</button>
+            </form>
+
+            <form id="lokasiForm" class="space-y-4">
+                <div class="m3-card p-5 space-y-3">
+                    <h3 class="font-bold text-xs text-gray-400 uppercase">Geofencing</h3>
+                    <input type="text" name="LOKASI_SEKOLAH_LAT" value="${state.config.LOKASI_SEKOLAH_LAT}" class="w-full bg-gray-50 p-3 rounded-xl text-xs border border-gray-200">
+                    <input type="text" name="LOKASI_SEKOLAH_LNG" value="${state.config.LOKASI_SEKOLAH_LNG}" class="w-full bg-gray-50 p-3 rounded-xl text-xs border border-gray-200">
+                </div>
+                <button type="submit" class="w-full m3-btn-tonal">Simpan Lokasi</button>
+            </form>
         </div>
     `;
-
     const handleSave = async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
         const data = Object.fromEntries(fd.entries());
         await fetch('/api/pengaturan', { method: 'POST', body: JSON.stringify(data) });
-        alert('Data berhasil disimpan.');
-        await fetchConfig(); renderAdminJadwal();
+        alert('Tersimpan!'); await fetchConfig(); renderAdminJadwal();
     };
-
     document.getElementById('jamForm').onsubmit = handleSave;
     document.getElementById('lokasiForm').onsubmit = handleSave;
-    renderLibur();
-}
-
-function renderLibur() {
-    const list = JSON.parse(state.config.HARI_LIBUR || "[]");
-    document.getElementById('liburList').innerHTML = list.map(d => `
-        <div class="bg-slate-800/50 border border-slate-700/50 px-5 py-2.5 rounded-2xl flex items-center text-xs font-bold text-slate-300">
-            ${d}
-            <button onclick="removeLibur('${d}')" class="ml-4 text-red-500/50 hover:text-red-400 transition">×</button>
-        </div>
-    `).join('');
-}
-
-async function addLibur() {
-    const date = document.getElementById('newLibur').value;
-    if (!date) return;
-    const list = JSON.parse(state.config.HARI_LIBUR || "[]");
-    if (!list.includes(date)) {
-        list.push(date);
-        await fetch('/api/pengaturan', { method: 'POST', body: JSON.stringify({ HARI_LIBUR: JSON.stringify(list) }) });
-        await fetchConfig(); renderAdminJadwal();
-    }
-}
-
-async function removeLibur(date) {
-    let list = JSON.parse(state.config.HARI_LIBUR || "[]");
-    list = list.filter(d => d !== date);
-    await fetch('/api/pengaturan', { method: 'POST', body: JSON.stringify({ HARI_LIBUR: JSON.stringify(list) }) });
-    await fetchConfig(); renderAdminJadwal();
 }
 
 function renderAdminIzin() {
     app.innerHTML = `
-        <div class="mb-10 flex items-center">
-            <button onclick="navigate('admin_dashboard')" class="mr-6 p-3 glass rounded-2xl hover:bg-white/5 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
-            <h1 class="text-3xl font-bold tracking-tight">Verifikasi Pengajuan</h1>
-        </div>
-        <div class="glass overflow-hidden shadow-2xl">
-            <table class="w-full text-left">
-                <thead class="bg-indigo-500/10">
-                    <tr>
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest">Pendaftar</th>
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest">Detail Izin</th>
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest">Berkas</th>
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest">Status</th>
-                        <th class="p-5 text-xs font-bold text-slate-300 uppercase tracking-widest text-right">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="izinTableBody"></tbody>
-            </table>
+        <div class="px-6 pt-10">
+            <header class="flex items-center mb-8">
+                <button onclick="navigate('admin_dashboard')" class="p-2 mr-3 bg-gray-100 rounded-full">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <h1 class="text-2xl font-bold">Verifikasi</h1>
+            </header>
+            <div id="izinList" class="space-y-4"></div>
         </div>
     `;
+    fetch('/api/izin').then(res => res.json()).then(data => {
+        document.getElementById('izinList').innerHTML = data.map(i => `
+            <div class="m3-card p-5">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <p class="font-bold text-[#1a1c1e]">${i.nama}</p>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">${i.jenis} | ${i.tanggal}</p>
+                    </div>
+                    <span class="text-[9px] font-black uppercase tracking-widest px-2 py-1 bg-gray-100 rounded-full">${i.status}</span>
+                </div>
+                <p class="text-xs text-gray-600 mb-4">${i.alasan}</p>
+                ${i.status === 'Pending' ? `
+                    <div class="flex gap-2">
+                        <button onclick="approveIzin(${i.id}, 'Disetujui')" class="flex-1 py-2 bg-green-100 text-green-700 rounded-xl text-xs font-bold">Setuju</button>
+                        <button onclick="approveIzin(${i.id}, 'Ditolak')" class="flex-1 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-bold">Tolak</button>
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+    });
+}
 
-    fetch('/api/izin')
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('izinTableBody').innerHTML = data.map(i => `
-                <tr class="border-t border-slate-700/50 hover:bg-white/5 transition">
-                    <td class="p-5">
-                        <div class="font-bold text-sm text-slate-200">${i.nama}</div>
-                        <div class="text-[10px] text-slate-500 font-black tracking-widest uppercase">${i.guru_id}</div>
-                    </td>
-                    <td class="p-5">
-                        <div class="text-sm font-medium text-slate-300">${i.tanggal}</div>
-                        <div class="text-xs text-indigo-400 font-bold uppercase tracking-widest mt-0.5">${i.jenis}</div>
-                    </td>
-                    <td class="p-5">
-                        ${i.foto_key ? `<a href="/api/file?key=${i.foto_key}" target="_blank" class="text-indigo-400 hover:text-indigo-300 underline text-xs font-bold">Buka Foto</a>` : '<span class="text-slate-600 text-xs">-</span>'}
-                    </td>
-                    <td class="p-5">
-                        <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${i.status === 'Pending' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20' : i.status === 'Disetujui' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}">
-                            ${i.status}
-                        </span>
-                    </td>
-                    <td class="p-5 text-right">
-                        ${i.status === 'Pending' ? `
-                            <div class="flex justify-end gap-2">
-                                <button onclick="approveIzin(${i.id}, 'Disetujui')" class="bg-green-500/20 hover:bg-green-500 text-green-400 hover:text-white p-2.5 rounded-xl transition border border-green-500/20">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                                <button onclick="approveIzin(${i.id}, 'Ditolak')" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white p-2.5 rounded-xl transition border border-red-500/20">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                            </div>
-                        ` : '<span class="text-slate-600 text-xs font-bold tracking-widest">SELESAI</span>'}
-                    </td>
-                </tr>
-            `).join('');
-        });
+function renderAdminRiwayat() {
+    app.innerHTML = `
+        <div class="px-6 pt-10">
+            <header class="flex items-center justify-between mb-8">
+                <div class="flex items-center">
+                    <button onclick="navigate('admin_dashboard')" class="p-2 mr-3 bg-gray-100 rounded-full">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <h1 class="text-2xl font-bold">Laporan</h1>
+                </div>
+                <button onclick="window.print()" class="text-xs font-bold text-blue-600">CETAK</button>
+            </header>
+            <div id="logList" class="space-y-3"></div>
+        </div>
+    `;
+    fetch('/api/riwayat').then(res => res.json()).then(data => {
+        document.getElementById('logList').innerHTML = data.map(r => `
+            <div class="m3-card p-4 flex justify-between items-center text-xs">
+                <div>
+                    <p class="font-bold">${r.nama}</p>
+                    <p class="text-gray-400 font-bold uppercase" style="font-size: 8px;">${r.timestamp}</p>
+                </div>
+                <div class="font-black text-blue-600 uppercase" style="font-size: 9px;">${r.status}</div>
+            </div>
+        `).join('');
+    });
 }
 
 async function approveIzin(id, status) {
     await fetch('/api/approve_izin', { method: 'POST', body: JSON.stringify({ id, status }) });
     renderAdminIzin();
-}
-
-function renderAdminRiwayat() {
-    app.innerHTML = `
-        <div class="mb-10 flex items-center justify-between">
-            <div class="flex items-center">
-                <button onclick="navigate('admin_dashboard')" class="mr-6 p-3 glass rounded-2xl hover:bg-white/5 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                    </svg>
-                </button>
-                <h1 class="text-3xl font-bold tracking-tight">Laporan Global</h1>
-            </div>
-            <button onclick="window.print()" class="bg-white text-slate-900 px-6 py-3 rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-200 transition">Cetak PDF</button>
-        </div>
-        <div class="glass overflow-hidden shadow-2xl">
-            <table class="w-full text-left">
-                <thead class="bg-indigo-500/10">
-                    <tr>
-                        <th class="p-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Guru</th>
-                        <th class="p-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Waktu Presensi</th>
-                        <th class="p-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Lokasi</th>
-                        <th class="p-5 text-[10px] font-black text-slate-300 uppercase tracking-widest text-right">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="adminRiwayatBody"></tbody>
-            </table>
-        </div>
-    `;
-
-    fetch('/api/riwayat')
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('adminRiwayatBody').innerHTML = data.map(r => `
-                <tr class="border-t border-slate-700/50 hover:bg-white/5 transition">
-                    <td class="p-5">
-                        <div class="font-bold text-sm text-slate-200">${r.nama}</div>
-                        <div class="text-[10px] text-slate-500 font-bold tracking-widest uppercase">${r.guru_id}</div>
-                    </td>
-                    <td class="p-5">
-                        <div class="text-sm font-medium text-slate-300">${r.timestamp}</div>
-                        <div class="text-[10px] text-slate-500 font-medium tracking-tight mt-0.5">${r.keterangan}</div>
-                    </td>
-                    <td class="p-5">
-                        <div class="text-[10px] text-slate-400 font-mono tracking-tighter">${r.latitude}, ${r.longitude}</div>
-                    </td>
-                    <td class="p-5 text-right">
-                         <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${r.status === 'Hadir' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : r.status === 'Terlambat' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}">
-                            ${r.status}
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
-        });
 }
 
 // GLOBAL LOGIC
@@ -717,39 +583,58 @@ function startClock() {
         const witOffset = 9 * 60;
         const wit = new Date(now.getTime() + (witOffset + now.getTimezoneOffset()) * 60000);
         clock.innerText = wit.toTimeString().split(' ')[0];
-        dateEl.innerText = wit.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        dateEl.innerText = wit.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
     };
     setInterval(update, 1000); update();
 }
 
 async function handleAbsen() {
     const btn = document.getElementById('btnAbsen');
-    const statusMsg = document.getElementById('statusMessage');
+    const recentStatus = document.getElementById('recentStatus');
     btn.disabled = true; btn.innerText = 'MEMINDAI LOKASI...';
-    statusMsg.classList.add('hidden');
+    recentStatus.classList.add('hidden');
 
-    if (!navigator.geolocation) { alert("Geolocation tidak didukung."); btn.disabled = false; btn.innerText = 'Konfirmasi Kehadiran'; return; }
+    if (!navigator.geolocation) { alert("GPS Tidak Tersedia."); btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI'; return; }
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude, longitude } = pos.coords;
-        btn.innerText = 'MENGIRIM DATA...';
+        btn.innerText = 'MEMPROSES DATA...';
         try {
             const res = await fetch('/api/absen', {
                 method: 'POST',
                 body: JSON.stringify({ guru_id: state.user.id, lat: latitude, lng: longitude })
             });
             const data = await res.json();
-            statusMsg.classList.remove('hidden');
+            recentStatus.classList.remove('hidden');
             if (res.ok) {
-                statusMsg.className = "mt-6 p-6 glass bg-green-500/10 border border-green-500/30 text-center rounded-3xl animate-in fade-in zoom-in duration-300";
-                statusMsg.innerHTML = `<div class="text-green-400 font-black uppercase tracking-widest text-sm mb-1">Presensi Berhasil</div><div class="text-white font-bold">${data.keterangan} (${data.status})</div>`;
+                recentStatus.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 p-4 rounded-2xl flex items-center">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-green-700 uppercase">Presensi Berhasil</p>
+                            <p class="text-sm font-bold text-[#1a1c1e]">${data.status}</p>
+                        </div>
+                    </div>
+                `;
+                fetchTodayLog();
             } else {
-                statusMsg.className = "mt-6 p-6 glass bg-red-500/10 border border-red-500/30 text-center rounded-3xl animate-in fade-in zoom-in duration-300";
-                statusMsg.innerHTML = `<div class="text-red-400 font-black uppercase tracking-widest text-sm mb-1">Presensi Gagal</div><div class="text-white font-bold">${data.error}</div>`;
+                recentStatus.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 p-4 rounded-2xl flex items-center">
+                        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3 text-red-600 font-black">!</div>
+                        <div>
+                            <p class="text-[10px] font-black text-red-700 uppercase">Gagal Presensi</p>
+                            <p class="text-sm font-bold text-[#1a1c1e]">${data.error}</p>
+                        </div>
+                    </div>
+                `;
             }
-        } catch (e) { alert("Kesalahan server."); }
-        finally { btn.disabled = false; btn.innerText = 'Konfirmasi Kehadiran'; }
-    }, (err) => { alert("Pastikan GPS aktif."); btn.disabled = false; btn.innerText = 'Konfirmasi Kehadiran'; }, { enableHighAccuracy: true });
+        } catch (e) { alert("Masalah Server."); }
+        finally { btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI'; }
+    }, (err) => { alert("Aktifkan GPS Anda."); btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI'; }, { enableHighAccuracy: true });
 }
 
 init();
