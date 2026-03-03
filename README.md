@@ -41,7 +41,10 @@ Setelah deployment pertama selesai:
 5. Klik **Save**.
 6. **Penting:** Anda harus melakukan **Redeploy** (Deploy ulang) agar binding tersebut aktif. Buka tab **Deployments**, klik titik tiga pada deploy terbaru, dan pilih **Retry deployment**.
 
-## 5. Penggunaan Pertama Kali
+## 5. Persiapan Model AI (Penting!)
+Aplikasi ini menggunakan fitur Verifikasi Wajah. Agar fitur ini berjalan, Anda harus memastikan folder `models` beserta isinya terunggah ke repositori GitHub Anda. Cloudflare Pages akan otomatis menyajikannya sebagai file statis yang dibutuhkan oleh browser guru untuk mendeteksi wajah.
+
+## 6. Penggunaan Pertama Kali
 - **URL Login:** Gunakan URL yang diberikan oleh Cloudflare Pages (misal: `https://absensi-xxx.pages.dev`).
 - **Akun Admin:**
   - ID: `sdinleling@admin`
@@ -49,6 +52,13 @@ Setelah deployment pertama selesai:
 - **Akun Guru (Contoh):**
   - ID: `G001`, PIN: `4821`
   - ID: `G002`, PIN: `1234`
+- **Verifikasi Wajah:** Saat pertama kali login, guru akan diminta mendaftarkan wajah. Admin dapat mereset data wajah melalui panel "Data Guru" jika diperlukan.
+
+## Fitur Unggulan
+- **Face Recognition:** Verifikasi wajah sebelum absen untuk mencegah penitipan absen.
+- **Anti Fake GPS:** Mendeteksi penggunaan aplikasi lokasi palsu.
+- **Modern UI:** Tampilan bersih dengan gaya Android 15 / Material Design 3.
+- **SweetAlert2:** Notifikasi interaktif dan ramah pengguna.
 
 ## Catatan Lokasi & Waktu
 - Lokasi sekolah saat ini diatur di: `-7.14872, 131.70819` dengan radius `20 meter`.

@@ -1,6 +1,30 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
-  const { guru_id, lat, lng, accuracy } = await request.json();
+  const { guru_id, lat, lng, accuracy, face_descriptor } = await request.json();
+
+  // Get User for Face Verification
+  const user = await env.DB.prepare("SELECT face_descriptor FROM guru WHERE id = ?").bind(guru_id).first();
+  if (!user) return new Response(JSON.stringify({ error: "Guru tidak ditemukan" }), { status: 404 });
+
+  if (!user.face_descriptor) {
+    return new Response(JSON.stringify({ error: "Wajah belum didaftarkan. Silakan hubungi admin atau daftar ulang." }), { status: 400 });
+  }
+
+  // Face Verification (Euclidean Distance)
+  const storedDescriptor = JSON.parse(user.face_descriptor);
+  const currentDescriptor = face_descriptor; // Expected to be array
+
+  if (!currentDescriptor || !Array.isArray(currentDescriptor)) {
+    return new Response(JSON.stringify({ error: "Data verifikasi wajah tidak valid" }), { status: 400 });
+  }
+
+  const faceDistance = Math.sqrt(
+    storedDescriptor.reduce((sum, val, i) => sum + Math.pow(val - currentDescriptor[i], 2), 0)
+  );
+
+  if (faceDistance > 0.6) { // Threshold 0.6 is standard for face-api.js
+    return new Response(JSON.stringify({ error: "Verifikasi wajah gagal. Wajah tidak cocok!" }), { status: 403 });
+  }
 
   // Get Settings
   const configRaw = await env.DB.prepare("SELECT * FROM pengaturan").all();

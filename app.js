@@ -2,7 +2,8 @@ const state = {
     user: JSON.parse(localStorage.getItem('user')) || null,
     config: {},
     currentPage: 'login',
-    activeTab: 'home'
+    activeTab: 'home',
+    modelsLoaded: false
 };
 
 const app = document.getElementById('app');
@@ -10,12 +11,33 @@ const app = document.getElementById('app');
 // Initialization
 async function init() {
     if (state.user) {
-        state.currentPage = state.user.role === 'admin' ? 'admin_dashboard' : 'guru_dashboard';
+        if (state.user.role === 'admin') {
+            state.currentPage = 'admin_dashboard';
+        } else if (!state.user.isFaceRegistered) {
+            state.currentPage = 'face_registration';
+        } else {
+            state.currentPage = 'guru_dashboard';
+        }
     } else {
         state.currentPage = 'login';
     }
     await fetchConfig();
     render();
+    if (state.user && !state.modelsLoaded) {
+        loadFaceModels();
+    }
+}
+
+async function loadFaceModels() {
+    try {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+        state.modelsLoaded = true;
+        console.log("AI Models Loaded");
+    } catch (e) {
+        console.error("Gagal memuat model AI", e);
+    }
 }
 
 async function fetchConfig() {
@@ -25,6 +47,85 @@ async function fetchConfig() {
     } catch (e) {
         console.error("Gagal mengambil konfigurasi", e);
     }
+}
+
+function renderFaceRegistration() {
+    app.innerHTML = `
+        <div class="px-6 pt-10 flex flex-col items-center justify-center min-h-screen text-center">
+            <div class="w-20 h-20 bg-indigo-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-[#1a1c1e] mb-2">Daftarkan Wajah</h1>
+            <p class="text-gray-500 mb-8 font-medium">Hai ${state.user.nama}, mohon daftarkan wajah Anda untuk mulai menggunakan aplikasi.</p>
+
+            <div class="m3-card overflow-hidden relative w-full aspect-square max-w-[300px] mb-8 bg-black">
+                <video id="faceVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                <canvas id="faceCanvas" class="absolute inset-0 w-full h-full"></canvas>
+            </div>
+
+            <button id="btnRegisterFace" class="w-full m3-btn-filled py-4 text-lg">MULAI PINDAI</button>
+            <p id="regStatus" class="mt-4 text-sm font-bold text-blue-600"></p>
+        </div>
+    `;
+
+    const video = document.getElementById('faceVideo');
+    const btn = document.getElementById('btnRegisterFace');
+    const status = document.getElementById('regStatus');
+
+    btn.onclick = async () => {
+        btn.disabled = true;
+        btn.innerText = 'MENYIAPKAN KAMERA...';
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            video.srcObject = stream;
+
+            status.innerText = 'Mendeteksi Wajah...';
+            btn.innerText = 'PINDAI BERJALAN';
+
+            const interval = setInterval(async () => {
+                if (!state.modelsLoaded) return;
+
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                if (detection) {
+                    clearInterval(interval);
+                    status.innerText = 'Wajah Terdeteksi! Menyimpan...';
+
+                    // Simpan ke DB
+                    const res = await fetch('/api/guru', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            id: state.user.id,
+                            action: 'register_face',
+                            face_descriptor: JSON.stringify(Array.from(detection.descriptor))
+                        })
+                    });
+
+                    if (res.ok) {
+                        stream.getTracks().forEach(track => track.stop());
+                        state.user.isFaceRegistered = true;
+                        localStorage.setItem('user', JSON.stringify(state.user));
+                        Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Wajah Anda telah terdaftar.', timer: 2000, showConfirmButton: false });
+                        setTimeout(() => init(), 2000);
+                    } else {
+                        status.innerText = 'Gagal menyimpan data wajah.';
+                        btn.disabled = false;
+                        btn.innerText = 'COBA LAGI';
+                    }
+                }
+            }, 1000);
+
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Kamera Gagal', text: 'Mohon berikan izin akses kamera.' });
+            btn.disabled = false;
+            btn.innerText = 'COBA LAGI';
+        }
+    };
 }
 
 // Router
@@ -40,6 +141,7 @@ function render() {
 
     switch (state.currentPage) {
         case 'login': renderLogin(); break;
+        case 'face_registration': renderFaceRegistration(); break;
         case 'guru_dashboard': renderGuruDashboard(); break;
         case 'admin_dashboard': renderAdminDashboard(); break;
         case 'izin_guru': renderIzinGuru(); break;
@@ -267,9 +369,16 @@ function renderIzinGuru() {
         formData.append('foto', document.getElementById('izinFoto').files[0]);
         try {
             const res = await fetch('/api/izin', { method: 'POST', body: formData });
-            if (res.ok) { alert("Berhasil dikirim!"); navigate('guru_dashboard', 'home'); }
-            else alert("Gagal!");
-        } catch (e) { alert("Masalah koneksi."); }
+            if (res.ok) {
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Pengajuan izin telah terkirim dan menunggu persetujuan admin.', confirmButtonColor: '#3f5f91' });
+                navigate('guru_dashboard', 'home');
+            }
+            else {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan saat mengirim pengajuan.', confirmButtonColor: '#3f5f91' });
+            }
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Koneksi Terputus', text: 'Pastikan internet Anda stabil.', confirmButtonColor: '#3f5f91' });
+        }
         finally { btn.disabled = false; btn.innerText = 'KIRIM PENGAJUAN'; }
     };
 }
@@ -427,26 +536,62 @@ async function loadGuruData() {
     const data = await res.json();
     document.getElementById('guruList').innerHTML = data.map(g => `
         <div class="m3-card p-4 flex justify-between items-center">
-            <div>
+            <div class="flex-1">
                 <p class="font-bold text-[#1a1c1e]">${g.nama}</p>
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${g.id}</p>
+                ${g.hasFace ? '<span class="text-[8px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">WAJAH TERDAFTAR</span>' : '<span class="text-[8px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold">WAJAH BELUM ADA</span>'}
             </div>
-            <button onclick="deleteGuru('${g.id}')" class="p-2 text-red-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-            </button>
+            <div class="flex items-center gap-2">
+                <button onclick="resetFace('${g.id}')" title="Reset Wajah" class="p-2 text-amber-600 bg-amber-50 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </button>
+                <button onclick="deleteGuru('${g.id}')" class="p-2 text-red-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            </div>
         </div>
     `).join('');
+}
+
+async function resetFace(id) {
+    const result = await Swal.fire({
+        title: 'Reset Wajah?',
+        text: "Guru ini harus mendaftarkan wajahnya kembali saat login berikutnya.",
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#3f5f91',
+        confirmButtonText: 'Ya, Reset'
+    });
+    if (result.isConfirmed) {
+        await fetch('/api/guru', { method: 'POST', body: JSON.stringify({ id, action: 'reset_face' }) });
+        loadGuruData();
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data wajah guru telah direset.', timer: 1500, showConfirmButton: false });
+    }
 }
 
 function showGuruModal() { document.getElementById('guruModal').classList.remove('hidden'); }
 function closeGuruModal() { document.getElementById('guruModal').classList.add('hidden'); }
 
 async function deleteGuru(id) {
-    if (confirm('Hapus guru ini?')) {
+    const result = await Swal.fire({
+        title: 'Hapus Guru?',
+        text: "Seluruh data terkait guru ini akan dihapus permanen!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3f5f91',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
         await fetch('/api/guru', { method: 'POST', body: JSON.stringify({ id, action: 'delete' }) });
         loadGuruData();
+        Swal.fire({ icon: 'success', title: 'Terhapus!', text: 'Data guru telah dihapus.', timer: 1500, showConfirmButton: false });
     }
 }
 
@@ -509,7 +654,8 @@ function renderAdminJadwal() {
         }
 
         await fetch('/api/pengaturan', { method: 'POST', body: JSON.stringify(data) });
-        alert('Tersimpan!'); await fetchConfig(); renderAdminJadwal();
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Pengaturan telah diperbarui.', timer: 1500, showConfirmButton: false });
+        await fetchConfig(); renderAdminJadwal();
     };
     document.getElementById('jamForm').onsubmit = handleSave;
     document.getElementById('lokasiForm').onsubmit = handleSave;
@@ -607,10 +753,69 @@ function startClock() {
 async function handleAbsen() {
     const btn = document.getElementById('btnAbsen');
     const recentStatus = document.getElementById('recentStatus');
+
+    // Face Verification Step
+    btn.disabled = true;
+    btn.innerText = 'VERIFIKASI WAJAH...';
+
+    const faceResult = await Swal.fire({
+        title: 'Verifikasi Wajah',
+        html: `
+            <div class="relative w-full aspect-square bg-black rounded-2xl overflow-hidden mb-4">
+                <video id="verifyVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+            </div>
+            <p id="verifyStatus" class="text-sm font-bold text-blue-600">Mencari wajah...</p>
+        `,
+        showCancelButton: true,
+        cancelButtonText: 'Batal',
+        confirmButtonText: 'Ambil Wajah',
+        confirmButtonColor: '#3f5f91',
+        didOpen: async () => {
+            const video = document.getElementById('verifyVideo');
+            const status = document.getElementById('verifyStatus');
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            video.srcObject = stream;
+
+            window.verifyStream = stream; // Save to stop later
+        },
+        willClose: () => {
+            if (window.verifyStream) {
+                window.verifyStream.getTracks().forEach(t => t.stop());
+            }
+        },
+        preConfirm: async () => {
+            const video = document.getElementById('verifyVideo');
+            const status = document.getElementById('verifyStatus');
+
+            status.innerText = 'Menganalisa wajah...';
+            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (!detection) {
+                Swal.showValidationMessage('Wajah tidak terdeteksi! Pastikan wajah terlihat jelas.');
+                return false;
+            }
+            return Array.from(detection.descriptor);
+        }
+    });
+
+    if (!faceResult.isConfirmed) {
+        btn.disabled = false;
+        btn.innerText = 'KONFIRMASI PRESENSI';
+        return;
+    }
+
+    const faceDescriptor = faceResult.value;
+
     btn.disabled = true; btn.innerText = 'MEMINDAI LOKASI...';
     recentStatus.classList.add('hidden');
 
-    if (!navigator.geolocation) { alert("GPS Tidak Tersedia."); btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI'; return; }
+    if (!navigator.geolocation) {
+        Swal.fire({ icon: 'error', title: 'GPS Tidak Tersedia', text: 'Aplikasi membutuhkan akses lokasi.', confirmButtonColor: '#3f5f91' });
+        btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI';
+        return;
+    }
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude, longitude, accuracy } = pos.coords;
@@ -630,7 +835,12 @@ async function handleAbsen() {
         }
 
         if (isMock) {
-            alert("Terdeteksi penggunaan Fake GPS! Harap gunakan lokasi asli.");
+            Swal.fire({
+                icon: 'error',
+                title: 'Fake GPS Terdeteksi',
+                text: 'Aplikasi mendeteksi penggunaan lokasi palsu. Harap gunakan lokasi asli untuk melakukan presensi.',
+                confirmButtonColor: '#3f5f91'
+            });
             btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI';
             return;
         }
@@ -639,7 +849,13 @@ async function handleAbsen() {
         try {
             const res = await fetch('/api/absen', {
                 method: 'POST',
-                body: JSON.stringify({ guru_id: state.user.id, lat: latitude, lng: longitude, accuracy })
+                body: JSON.stringify({
+                    guru_id: state.user.id,
+                    lat: latitude,
+                    lng: longitude,
+                    accuracy,
+                    face_descriptor: faceDescriptor
+                })
             });
             const data = await res.json();
             recentStatus.classList.remove('hidden');
@@ -669,9 +885,14 @@ async function handleAbsen() {
                     </div>
                 `;
             }
-        } catch (e) { alert("Masalah Server."); }
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Kesalahan Server', text: 'Gagal menghubungi server presensi.', confirmButtonColor: '#3f5f91' });
+        }
         finally { btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI'; }
-    }, (err) => { alert("Aktifkan GPS Anda."); btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI'; }, { enableHighAccuracy: true });
+    }, (err) => {
+        Swal.fire({ icon: 'warning', title: 'GPS Tidak Aktif', text: 'Mohon aktifkan GPS dan berikan izin lokasi pada browser Anda.', confirmButtonColor: '#3f5f91' });
+        btn.disabled = false; btn.innerText = 'KONFIRMASI PRESENSI';
+    }, { enableHighAccuracy: true });
 }
 
 init();

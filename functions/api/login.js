@@ -23,7 +23,8 @@ export async function onRequestPost(context) {
   return new Response(JSON.stringify({
     id: user.id,
     nama: user.nama,
-    role: user.role
+    role: user.role,
+    isFaceRegistered: !!user.face_descriptor
   }), {
     headers: { "Content-Type": "application/json" },
   });
