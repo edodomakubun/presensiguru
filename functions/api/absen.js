@@ -75,6 +75,22 @@ export async function onRequestPost(context) {
     return new Response(JSON.stringify({ error: "Bukan waktu absensi (Jam sekarang: " + currentTimeStr + ")" }), { status: 400 });
   }
 
+  // Double Attendance Check
+  const dateOnly = witTime.toLocaleDateString('id-ID', { timeZone: 'Asia/Jayapura' });
+  const existing = await env.DB.prepare(
+    "SELECT status FROM absensi WHERE guru_id = ? AND timestamp LIKE ?"
+  ).bind(guru_id, `${dateOnly}%`).all();
+
+  const alreadyIn = existing.results.some(r => r.status === 'Hadir' || r.status === 'Terlambat');
+  const alreadyOut = existing.results.some(r => r.status === 'Pulang');
+
+  if ((status === 'Hadir' || status === 'Terlambat') && alreadyIn) {
+    return new Response(JSON.stringify({ error: "Anda sudah melakukan absensi masuk/terlambat hari ini" }), { status: 400 });
+  }
+  if (status === 'Pulang' && alreadyOut) {
+    return new Response(JSON.stringify({ error: "Anda sudah melakukan absensi pulang hari ini" }), { status: 400 });
+  }
+
   // Save to DB
   const isoTimestamp = witTime.toISOString();
   const timestampStr = witTime.toLocaleString('id-ID', { timeZone: 'Asia/Jayapura' });

@@ -310,16 +310,22 @@ function renderGuruDashboard() {
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-2xl p-4 flex items-center justify-between mb-8 border border-gray-100">
-                    <div class="flex items-center">
-                         <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                              </svg>
-                         </div>
-                         <div class="text-xs font-bold text-gray-500 uppercase">Status Lokasi</div>
+                <div id="scheduleTimeline" class="flex justify-between mb-8 gap-2">
+                    <div class="flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50">
+                        <p class="text-[8px] font-black text-gray-400 uppercase">Masuk</p>
+                        <p id="indicatorMasuk" class="text-[10px] font-bold text-gray-600">-</p>
+                        <p class="text-[7px] text-gray-300 font-bold">${state.config.JAM_MASUK_MULAI}-${state.config.JAM_MASUK_SELESAI}</p>
                     </div>
-                    <div class="text-xs font-black text-green-600 uppercase">Aktif (20m)</div>
+                    <div class="flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50">
+                        <p class="text-[8px] font-black text-gray-400 uppercase">Telat</p>
+                        <p id="indicatorTelat" class="text-[10px] font-bold text-gray-600">-</p>
+                        <p class="text-[7px] text-gray-300 font-bold">${state.config.JAM_TERLAMBAT_MULAI}-${state.config.JAM_TERLAMBAT_SELESAI}</p>
+                    </div>
+                    <div class="flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50">
+                        <p class="text-[8px] font-black text-gray-400 uppercase">Pulang</p>
+                        <p id="indicatorPulang" class="text-[10px] font-bold text-gray-600">-</p>
+                        <p class="text-[7px] text-gray-300 font-bold">${state.config.JAM_PULANG_MULAI}-${state.config.JAM_PULANG_SELESAI}</p>
+                    </div>
                 </div>
 
                 <button onclick="handleAbsen()" id="btnAbsen" class="w-full m3-btn-filled py-5 text-lg uppercase tracking-wider shadow-lg">KONFIRMASI PRESENSI</button>
@@ -370,6 +376,7 @@ async function fetchTodayLog() {
     const data = await res.json();
     const today = new Date().toLocaleDateString('id-ID');
     const logs = data.filter(r => r.timestamp.includes(today));
+    state.todayLogs = logs; // Save to global state
 
     if (logs.length > 0) {
         document.getElementById('todayLog').innerHTML = logs.map(l => `
@@ -837,8 +844,104 @@ function startClock() {
         const wit = new Date(now.getTime() + (witOffset + now.getTimezoneOffset()) * 60000);
         clock.innerText = wit.toTimeString().split(' ')[0];
         dateEl.innerText = wit.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+        updateAttendanceIndicators(wit);
     };
     setInterval(update, 1000); update();
+}
+
+function updateAttendanceIndicators(now) {
+    const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+    const btn = document.getElementById('btnAbsen');
+
+    // Elements
+    const iMasuk = document.getElementById('indicatorMasuk');
+    const iTelat = document.getElementById('indicatorTelat');
+    const iPulang = document.getElementById('indicatorPulang');
+    if (!iMasuk) return;
+
+    // Reset styles
+    [iMasuk, iTelat, iPulang].forEach(el => {
+        el.parentElement.className = "flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50";
+        el.className = "text-[10px] font-bold text-gray-600";
+    });
+
+    let canAbsen = false;
+
+    // Masuk Check
+    if (timeStr >= state.config.JAM_MASUK_MULAI && timeStr <= state.config.JAM_MASUK_SELESAI) {
+        setIndicatorActive(iMasuk, "Berjalan");
+        canAbsen = true;
+    } else if (timeStr > state.config.JAM_MASUK_SELESAI) {
+        setIndicatorPassed(iMasuk, "Lewat");
+    }
+
+    // Telat Check
+    if (timeStr >= state.config.JAM_TERLAMBAT_MULAI && timeStr <= state.config.JAM_TERLAMBAT_SELESAI) {
+        setIndicatorActive(iTelat, "Berjalan");
+        canAbsen = true;
+    } else if (timeStr > state.config.JAM_TERLAMBAT_SELESAI) {
+        setIndicatorPassed(iTelat, "Lewat");
+    }
+
+    // Pulang Check
+    if (timeStr >= state.config.JAM_PULANG_MULAI && timeStr <= state.config.JAM_PULANG_SELESAI) {
+        setIndicatorActive(iPulang, "Berjalan");
+        canAbsen = true;
+    } else if (timeStr > state.config.JAM_PULANG_SELESAI) {
+        setIndicatorPassed(iPulang, "Lewat");
+    }
+
+    // Mark as DONE if already in riwayat
+    const today = now.toLocaleDateString('id-ID');
+    const todayLogs = state.todayLogs || [];
+    const hasIn = todayLogs.some(l => l.status === 'Hadir' || l.status === 'Terlambat');
+    const hasOut = todayLogs.some(l => l.status === 'Pulang');
+
+    if (hasIn) {
+        setIndicatorDone(iMasuk, "Selesai");
+        setIndicatorDone(iTelat, "Selesai");
+        // If it was time to masuk/telat but already done, block it
+        if ((timeStr >= state.config.JAM_MASUK_MULAI && timeStr <= state.config.JAM_MASUK_SELESAI) ||
+            (timeStr >= state.config.JAM_TERLAMBAT_MULAI && timeStr <= state.config.JAM_TERLAMBAT_SELESAI)) {
+            canAbsen = false;
+        }
+    }
+    if (hasOut) {
+        setIndicatorDone(iPulang, "Selesai");
+        if (timeStr >= state.config.JAM_PULANG_MULAI && timeStr <= state.config.JAM_PULANG_SELESAI) {
+            canAbsen = false;
+        }
+    }
+
+    if (btn) {
+        btn.disabled = !canAbsen;
+        btn.className = canAbsen ? "w-full m3-btn-filled py-5 text-lg uppercase tracking-wider shadow-lg" : "w-full m3-btn-tonal py-5 text-lg uppercase tracking-wider opacity-50";
+        if (!canAbsen) {
+            if (hasIn && !hasOut && timeStr < state.config.JAM_PULANG_MULAI) btn.innerText = "MENUNGGU JAM PULANG";
+            else if (hasOut) btn.innerText = "PRESENSI SELESAI";
+            else btn.innerText = "BUKAN WAKTU ABSENSI";
+        } else {
+            btn.innerText = "KONFIRMASI PRESENSI";
+        }
+    }
+}
+
+function setIndicatorActive(el, text) {
+    el.parentElement.className = "flex-1 text-center p-2 rounded-2xl border border-blue-200 bg-blue-50 animate-pulse";
+    el.className = "text-[10px] font-black text-blue-600";
+    el.innerText = text;
+}
+
+function setIndicatorPassed(el, text) {
+    el.parentElement.className = "flex-1 text-center p-2 rounded-2xl border border-red-100 bg-red-50";
+    el.className = "text-[10px] font-bold text-red-400";
+    el.innerText = text;
+}
+
+function setIndicatorDone(el, text) {
+    el.parentElement.className = "flex-1 text-center p-2 rounded-2xl border border-green-200 bg-green-50";
+    el.className = "text-[10px] font-black text-green-600";
+    el.innerText = text;
 }
 
 async function handleAbsen() {
