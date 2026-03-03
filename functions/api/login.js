@@ -1,6 +1,14 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
-  const { id, pin } = await request.json();
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ error: "Invalid JSON Request" }), { status: 400 });
+  }
+
+  const { id, pin } = body;
 
   if (!id || !pin) {
     return new Response(JSON.stringify({ error: "ID dan PIN wajib diisi" }), {

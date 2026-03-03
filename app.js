@@ -202,21 +202,83 @@ function navigate(page, tab = 'home') {
 
 // Render Logic
 function render() {
+    if (!app) return;
     app.innerHTML = '';
 
-    switch (state.currentPage) {
-        case 'login': renderLogin(); break;
-        case 'face_registration': renderFaceRegistration(); break;
-        case 'guru_dashboard': renderGuruDashboard(); break;
-        case 'admin_dashboard': renderAdminDashboard(); break;
-        case 'izin_guru': renderIzinGuru(); break;
-        case 'riwayat_guru': renderRiwayatGuru(); break;
-        // Admin pages reuse standard layout for simplicity but with new style
-        case 'admin_guru': renderAdminGuru(); break;
-        case 'admin_jadwal': renderAdminJadwal(); break;
-        case 'admin_izin': renderAdminIzin(); break;
-        case 'admin_riwayat': renderAdminRiwayat(); break;
+    // Pages that use the standard Guru shell
+    const guruShellPages = ['guru_dashboard', 'izin_guru', 'riwayat_guru'];
+
+    if (guruShellPages.includes(state.currentPage)) {
+        renderGuruShell(() => {
+            if (state.currentPage === 'guru_dashboard') renderGuruHome();
+            else if (state.currentPage === 'izin_guru') renderIzinContent();
+            else if (state.currentPage === 'riwayat_guru') renderRiwayatContent();
+        });
+    } else {
+        switch (state.currentPage) {
+            case 'login': renderLogin(); break;
+            case 'face_registration': renderFaceRegistration(); break;
+            case 'admin_dashboard': renderAdminDashboard(); break;
+            case 'admin_guru': renderAdminGuru(); break;
+            case 'admin_jadwal': renderAdminJadwal(); break;
+            case 'admin_izin': renderAdminIzin(); break;
+            case 'admin_riwayat': renderAdminRiwayat(); break;
+        }
     }
+}
+
+function renderGuruShell(renderContent) {
+    app.innerHTML = `
+        <div class="px-6 pt-10 animate-in fade-in duration-700 max-w-5xl mx-auto">
+            <header class="flex justify-between items-center mb-8">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-400 rounded-2xl flex items-center justify-center text-white font-black text-xl mr-4 shadow-lg">
+                        ${state.user.nama.charAt(0)}
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-black text-[#1a1c1e] leading-tight">Halo, ${state.user.nama.split(' ')[0]}!</h1>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">SDN LELING • GURU</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="p-3 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </header>
+
+            <div id="guruContent"></div>
+        </div>
+
+        <nav class="m3-bottom-nav">
+            <button onclick="navigate('guru_dashboard', 'home')" class="m3-nav-item ${state.activeTab === 'home' ? 'active' : ''}">
+                <div class="icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="${state.activeTab === 'home' ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                </div>
+                <span>Home</span>
+            </button>
+            <button onclick="navigate('izin_guru', 'izin')" class="m3-nav-item ${state.activeTab === 'izin' ? 'active' : ''}">
+                <div class="icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="${state.activeTab === 'izin' ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <span>Izin</span>
+            </button>
+            <button onclick="navigate('riwayat_guru', 'history')" class="m3-nav-item ${state.activeTab === 'history' ? 'active' : ''}">
+                <div class="icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="${state.activeTab === 'history' ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <span>Riwayat</span>
+            </button>
+        </nav>
+    `;
+    renderContent();
+    startClock();
 }
 
 // Android 15 Style Components
@@ -234,11 +296,11 @@ function renderLogin() {
             <form id="loginForm" class="w-full space-y-4">
                 <div class="space-y-1">
                     <label class="text-sm font-bold text-gray-700 ml-1">ID Pengguna</label>
-                    <input type="text" id="loginId" class="w-full bg-white border border-gray-300 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-lg" placeholder="Masukkan ID" required>
+                    <input type="text" id="loginId" autocomplete="username" class="w-full bg-white border border-gray-300 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-lg" placeholder="Masukkan ID" required>
                 </div>
                 <div class="space-y-1">
                     <label class="text-sm font-bold text-gray-700 ml-1">PIN Keamanan</label>
-                    <input type="password" id="loginPin" class="w-full bg-white border border-gray-300 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-lg" placeholder="••••" required>
+                    <input type="password" id="loginPin" autocomplete="current-password" class="w-full bg-white border border-gray-300 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-lg" placeholder="••••" required>
                 </div>
                 <button type="submit" class="w-full m3-btn-filled mt-6 py-5 text-lg">MASUK</button>
                 <div id="loginError" class="text-red-600 text-sm font-bold text-center mt-4 hidden"></div>
@@ -282,130 +344,106 @@ function renderLogin() {
     };
 }
 
-function renderGuruDashboard() {
-    app.innerHTML = `
-        <div class="px-6 pt-10 animate-in fade-in duration-700">
-            <header class="flex justify-between items-center mb-8">
-                <div class="flex items-center">
-                    <div class="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-400 rounded-2xl flex items-center justify-center text-white font-black text-xl mr-4 shadow-lg">
-                        ${state.user.nama.charAt(0)}
-                    </div>
-                    <div>
-                        <h1 class="text-xl font-black text-[#1a1c1e] leading-tight">Halo, ${state.user.nama.split(' ')[0]}!</h1>
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">SDN LELING • GURU</p>
-                    </div>
-                </div>
-                <button onclick="logout()" class="p-3 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                </button>
-            </header>
+function renderGuruHome() {
+    const container = document.getElementById('guruContent');
+    if (!container) return;
 
-            <div class="m3-card p-8 mb-8 relative overflow-hidden">
-                <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-100/50 rounded-full blur-3xl"></div>
-                <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-100/50 rounded-full blur-3xl"></div>
+    container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+            <!-- Left Column (Main Card) -->
+            <div class="md:col-span-7">
+                <div class="m3-card p-8 mb-8 relative overflow-hidden shadow-2xl">
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-100/50 rounded-full blur-3xl"></div>
+                    <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-100/50 rounded-full blur-3xl"></div>
 
-                <div class="flex justify-between items-start mb-10 relative z-10">
-                    <div>
-                        <p id="date" class="text-[10px] font-black text-[#3f5f91] uppercase tracking-[0.2em] mb-2">MEMUAT...</p>
-                        <div id="clock" class="text-5xl font-black text-[#1a1c1e] tracking-tighter">00:00:00</div>
+                    <div class="flex justify-between items-start mb-10 relative z-10">
+                        <div>
+                            <p id="date" class="text-[10px] font-black text-[#3f5f91] uppercase tracking-[0.2em] mb-2">MEMUAT...</p>
+                            <div id="clock" class="text-5xl md:text-6xl font-black text-[#1a1c1e] tracking-tighter">00:00:00</div>
+                        </div>
+                        <div class="m3-fab hidden md:flex">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                             </svg>
+                        </div>
                     </div>
-                    <div class="m3-fab">
-                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                         </svg>
-                    </div>
-                </div>
 
-                <div id="scheduleTimeline" class="flex justify-between mb-8 gap-2">
-                    <div class="flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50">
-                        <p class="text-[8px] font-black text-gray-400 uppercase">Masuk</p>
-                        <p id="indicatorMasuk" class="text-[10px] font-bold text-gray-600">-</p>
-                        <p class="text-[7px] text-gray-300 font-bold">${state.config.JAM_MASUK_MULAI}-${state.config.JAM_MASUK_SELESAI}</p>
+                    <div id="scheduleTimeline" class="flex justify-between mb-8 gap-2">
+                        <div class="flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Masuk</p>
+                            <p id="indicatorMasuk" class="text-[10px] font-bold text-gray-600">-</p>
+                            <p class="text-[7px] text-gray-300 font-bold">${state.config.JAM_MASUK_MULAI}-${state.config.JAM_MASUK_SELESAI}</p>
+                        </div>
+                        <div class="flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Telat</p>
+                            <p id="indicatorTelat" class="text-[10px] font-bold text-gray-600">-</p>
+                            <p class="text-[7px] text-gray-300 font-bold">${state.config.JAM_TERLAMBAT_MULAI}-${state.config.JAM_TERLAMBAT_SELESAI}</p>
+                        </div>
+                        <div class="flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Pulang</p>
+                            <p id="indicatorPulang" class="text-[10px] font-bold text-gray-600">-</p>
+                            <p class="text-[7px] text-gray-300 font-bold">${state.config.JAM_PULANG_MULAI}-${state.config.JAM_PULANG_SELESAI}</p>
+                        </div>
                     </div>
-                    <div class="flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50">
-                        <p class="text-[8px] font-black text-gray-400 uppercase">Telat</p>
-                        <p id="indicatorTelat" class="text-[10px] font-bold text-gray-600">-</p>
-                        <p class="text-[7px] text-gray-300 font-bold">${state.config.JAM_TERLAMBAT_MULAI}-${state.config.JAM_TERLAMBAT_SELESAI}</p>
-                    </div>
-                    <div class="flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50">
-                        <p class="text-[8px] font-black text-gray-400 uppercase">Pulang</p>
-                        <p id="indicatorPulang" class="text-[10px] font-bold text-gray-600">-</p>
-                        <p class="text-[7px] text-gray-300 font-bold">${state.config.JAM_PULANG_MULAI}-${state.config.JAM_PULANG_SELESAI}</p>
-                    </div>
+
+                    <button onclick="handleAbsen()" id="btnAbsen" class="w-full m3-btn-filled py-6 text-xl uppercase tracking-widest shadow-lg">KONFIRMASI PRESENSI</button>
                 </div>
 
-                <button onclick="handleAbsen()" id="btnAbsen" class="w-full m3-btn-filled py-5 text-lg uppercase tracking-wider shadow-lg">KONFIRMASI PRESENSI</button>
+                <!-- Laptop Stats -->
+                <div class="hidden md:grid grid-cols-2 gap-6">
+                    <div class="m3-card p-6 border-white shadow-md">
+                        <p class="text-[10px] font-black text-blue-400 uppercase mb-2">Presensi Sebulan</p>
+                        <p id="totalHadirLaptop" class="text-4xl font-black text-[#1a1c1e]">0</p>
+                    </div>
+                    <div class="m3-card p-6 border-white shadow-md">
+                        <p class="text-[10px] font-black text-indigo-400 uppercase mb-2">Total Izin</p>
+                        <p id="totalIzinLaptop" class="text-4xl font-black text-[#1a1c1e]">0</p>
+                    </div>
+                </div>
             </div>
 
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="font-black text-lg text-[#1a1c1e]">Aktivitas Hari Ini</h2>
-                <div class="px-3 py-1 bg-white/50 rounded-full text-[9px] font-black text-gray-400 border border-gray-100 uppercase tracking-widest">Live Update</div>
-            </div>
-
-            <div id="recentStatus" class="mb-6 hidden animate-in slide-in-from-bottom-4 duration-500"></div>
-
-            <div id="todayLog" class="m3-card p-2">
-                <p class="text-center text-gray-400 text-[10px] font-bold py-10 uppercase tracking-widest">Belum ada aktivitas terekam</p>
-            </div>
-
-            <!-- Stats Mini Card -->
-            <div class="mt-8 grid grid-cols-2 gap-4">
-                <div class="bg-gradient-to-br from-white to-gray-50 p-5 rounded-[24px] border border-white shadow-sm">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-2">Total Hadir</p>
-                    <p id="totalHadir" class="text-2xl font-black text-[#1a1c1e]">0</p>
+            <!-- Right Column (Activity Log) -->
+            <div class="md:col-span-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-black text-lg text-[#1a1c1e]">Aktivitas Hari Ini</h2>
+                    <div class="px-3 py-1 bg-white/50 rounded-full text-[9px] font-black text-gray-400 border border-gray-100 uppercase tracking-widest">Live Update</div>
                 </div>
-                <div class="bg-gradient-to-br from-white to-gray-50 p-5 rounded-[24px] border border-white shadow-sm">
-                    <p class="text-[9px] font-black text-gray-400 uppercase mb-2">Total Izin</p>
-                    <p id="totalIzin" class="text-2xl font-black text-[#1a1c1e]">0</p>
+
+                <div id="recentStatus" class="mb-6 hidden animate-in slide-in-from-bottom-4 duration-500"></div>
+
+                <div id="todayLog" class="m3-card p-2 min-h-[200px]">
+                    <p class="text-center text-gray-400 text-[10px] font-bold py-10 uppercase tracking-widest leading-relaxed">Belum ada aktivitas terekam</p>
+                </div>
+
+                <!-- Mobile Only Stats -->
+                <div class="mt-8 grid grid-cols-2 gap-4 md:hidden">
+                    <div class="bg-gradient-to-br from-white to-gray-50 p-5 rounded-[24px] border border-white shadow-sm">
+                        <p class="text-[9px] font-black text-gray-400 uppercase mb-2">Total Hadir</p>
+                        <p id="totalHadir" class="text-2xl font-black text-[#1a1c1e]">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-gray-50 p-5 rounded-[24px] border border-white shadow-sm">
+                        <p class="text-[9px] font-black text-gray-400 uppercase mb-2">Total Izin</p>
+                        <p id="totalIzin" class="text-2xl font-black text-[#1a1c1e]">0</p>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Android Bottom Nav -->
-        <nav class="m3-bottom-nav">
-            <button onclick="navigate('guru_dashboard', 'home')" class="m3-nav-item ${state.activeTab === 'home' ? 'active' : ''}">
-                <div class="icon-container">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="${state.activeTab === 'home' ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                </div>
-                <span>Home</span>
-            </button>
-            <button onclick="navigate('izin_guru', 'izin')" class="m3-nav-item ${state.activeTab === 'izin' ? 'active' : ''}">
-                <div class="icon-container">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="${state.activeTab === 'izin' ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                </div>
-                <span>Izin</span>
-            </button>
-            <button onclick="navigate('riwayat_guru', 'history')" class="m3-nav-item ${state.activeTab === 'history' ? 'active' : ''}">
-                <div class="icon-container">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="${state.activeTab === 'history' ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <span>Riwayat</span>
-            </button>
-        </nav>
     `;
-    startClock();
     fetchTodayLog();
 }
 
 
-function renderIzinGuru() {
-    renderGuruDashboard(); // Keep layout
-    const content = document.querySelector('.px-6.pt-10');
-    content.innerHTML = `
-        <header class="mb-8">
-            <h1 class="text-2xl font-bold text-[#1a1c1e]">Ajukan Izin</h1>
-            <p class="text-gray-500 font-medium">Lengkapi dokumen presensi</p>
+function renderIzinContent() {
+    const container = document.getElementById('guruContent');
+    if (!container) return;
+
+    container.innerHTML = `
+        <header class="mb-8 animate-in slide-in-from-left-4 duration-500">
+            <h1 class="text-2xl font-black text-[#1a1c1e]">Ajukan Izin</h1>
+            <p class="text-gray-500 font-medium text-sm">Lengkapi dokumen pendukung presensi</p>
         </header>
 
-        <form id="izinForm" class="space-y-6">
+        <form id="izinForm" class="space-y-6 max-w-2xl">
             <div class="m3-card p-6 space-y-4">
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-gray-500 uppercase ml-1">Tanggal</label>
@@ -457,17 +495,18 @@ function renderIzinGuru() {
     };
 }
 
-function renderRiwayatGuru() {
-    renderGuruDashboard(); // Keep layout
-    const content = document.querySelector('.px-6.pt-10');
-    content.innerHTML = `
-        <header class="mb-8">
-            <h1 class="text-2xl font-bold text-[#1a1c1e]">Riwayat Presensi</h1>
-            <p class="text-gray-500 font-medium">Log aktivitas kehadiran Anda</p>
+function renderRiwayatContent() {
+    const container = document.getElementById('guruContent');
+    if (!container) return;
+
+    container.innerHTML = `
+        <header class="mb-8 animate-in slide-in-from-left-4 duration-500">
+            <h1 class="text-2xl font-black text-[#1a1c1e]">Riwayat Presensi</h1>
+            <p class="text-gray-500 font-medium text-sm">Log aktivitas kehadiran Anda secara detail</p>
         </header>
 
-        <div id="riwayatList" class="space-y-4">
-            <p class="text-center py-10 text-gray-400 font-medium">Memuat...</p>
+        <div id="riwayatList" class="space-y-4 max-w-3xl">
+            <p class="text-center py-10 text-gray-400 font-bold text-[10px] uppercase tracking-widest">Memuat riwayat...</p>
         </div>
     `;
 
@@ -475,7 +514,8 @@ function renderRiwayatGuru() {
         .then(res => res.json())
         .then(data => {
             const list = document.getElementById('riwayatList');
-            if (data.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 py-10">Belum ada data.</p>'; return; }
+            if (!list) return;
+            if (data.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 py-10 font-bold text-[10px] uppercase tracking-widest">Belum ada data terekam.</p>'; return; }
             list.innerHTML = data.map(r => `
                 <div class="m3-card p-4 flex items-center justify-between">
                     <div class="flex items-center">
@@ -615,9 +655,11 @@ function renderAdminGuru() {
 }
 
 async function loadGuruData() {
+    const container = document.getElementById('guruList');
+    if (!container) return;
     const res = await fetch('/api/guru');
     const data = await res.json();
-    document.getElementById('guruList').innerHTML = data.map(g => `
+    container.innerHTML = data.map(g => `
         <div class="m3-card p-4 flex justify-between items-center">
             <div class="flex-1">
                 <p class="font-bold text-[#1a1c1e]">${g.nama}</p>
@@ -839,6 +881,8 @@ function startClock() {
     const dateEl = document.getElementById('date');
     if (!clock) return;
 
+    if (window.clockInterval) clearInterval(window.clockInterval);
+
     const update = () => {
         const now = new Date();
         // Use Intl.DateTimeFormat for accurate Asia/Jayapura time
@@ -866,7 +910,7 @@ function startClock() {
         const jayapuraTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jayapura"}));
         updateAttendanceIndicators(jayapuraTime);
     };
-    setInterval(update, 1000); update();
+    window.clockInterval = setInterval(update, 1000); update();
 }
 
 function updateAttendanceIndicators(now) {
@@ -966,7 +1010,11 @@ function setIndicatorDone(el, text) {
 
 async function fetchTodayLog() {
     try {
+        const container = document.getElementById('todayLog');
+        if (!container) return;
+
         const res = await fetch(`/api/riwayat?guru_id=${state.user.id}`);
+        if (!res.ok) throw new Error('Gagal memuat riwayat');
         const data = await res.json();
 
         // Use Jayapura timezone for "Today" comparison
@@ -975,7 +1023,7 @@ async function fetchTodayLog() {
         state.todayLogs = logs;
 
         if (logs.length > 0) {
-            document.getElementById('todayLog').innerHTML = logs.map(l => `
+            container.innerHTML = logs.map(l => `
                 <div class="flex items-center justify-between bg-white/40 p-4 rounded-3xl mb-2 border border-white/60 shadow-sm">
                     <div class="flex items-center">
                         <div class="w-10 h-10 ${l.status === 'Hadir' ? 'bg-green-100 text-green-600' : l.status === 'Terlambat' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'} rounded-2xl flex items-center justify-center mr-4 shadow-sm">
@@ -995,17 +1043,27 @@ async function fetchTodayLog() {
                 </div>
             `).join('');
         } else {
-            document.getElementById('todayLog').innerHTML = '<p class="text-center text-gray-400 text-[10px] font-bold py-10 uppercase tracking-widest">Belum ada aktivitas hari ini</p>';
+            container.innerHTML = '<p class="text-center text-gray-400 text-[10px] font-bold py-10 uppercase tracking-widest">Belum ada aktivitas hari ini</p>';
         }
 
         // Stats
-        document.getElementById('totalHadir').innerText = data.filter(r => r.status === 'Hadir' || r.status === 'Terlambat').length;
+        const hadirCount = data.filter(r => r.status === 'Hadir' || r.status === 'Terlambat').length;
+        const hEl = document.getElementById('totalHadir');
+        const hElL = document.getElementById('totalHadirLaptop');
+        if (hEl) hEl.innerText = hadirCount;
+        if (hElL) hElL.innerText = hadirCount;
 
         const resIzin = await fetch(`/api/izin`);
-        const dataIzin = await resIzin.json();
-        document.getElementById('totalIzin').innerText = dataIzin.filter(i => i.guru_id === state.user.id).length;
+        if (resIzin.ok) {
+            const dataIzin = await resIzin.json();
+            const izinCount = dataIzin.filter(i => i.guru_id === state.user.id).length;
+            const iEl = document.getElementById('totalIzin');
+            const iElL = document.getElementById('totalIzinLaptop');
+            if (iEl) iEl.innerText = izinCount;
+            if (iElL) iElL.innerText = izinCount;
+        }
 
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Error fetching logs:", e); }
 }
 
 async function handleAbsen() {

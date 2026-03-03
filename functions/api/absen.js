@@ -1,6 +1,14 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
-  const { guru_id, lat, lng, accuracy, face_descriptor } = await request.json();
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ error: "Permintaan tidak valid" }), { status: 400 });
+  }
+
+  const { guru_id, lat, lng, accuracy, face_descriptor } = body;
 
   // Get User for Face Verification
   const user = await env.DB.prepare("SELECT face_descriptor FROM guru WHERE id = ?").bind(guru_id).first();
@@ -11,7 +19,13 @@ export async function onRequestPost(context) {
   }
 
   // Face Verification (Euclidean Distance)
-  const storedDescriptor = JSON.parse(user.face_descriptor);
+  let storedDescriptor;
+  try {
+    storedDescriptor = JSON.parse(user.face_descriptor);
+  } catch (e) {
+    return new Response(JSON.stringify({ error: "Data wajah di server rusak" }), { status: 500 });
+  }
+
   const currentDescriptor = face_descriptor; // Expected to be array
 
   if (!currentDescriptor || !Array.isArray(currentDescriptor)) {

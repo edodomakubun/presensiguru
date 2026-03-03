@@ -1,0 +1,11 @@
+{
+  "name": "presensisaya",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npx @tailwindcss/cli -i input.css -o style.css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/cli": "^4.0.0"
+  }
+}

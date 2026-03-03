@@ -26,7 +26,7 @@ Ikuti langkah-langkah di bawah ini untuk memasang aplikasi ini secara gratis men
 3. Pilih repositori proyek ini.
 4. Pada bagian **Build settings**:
    - Framework preset: `None`
-   - Build command: (Kosongkan)
+   - Build command: `npm run build`
    - Build output directory: `.` (Titik, artinya root directory)
 5. Klik **Save and Deploy**.
 
