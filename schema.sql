@@ -1,38 +1,7 @@
-CREATE TABLE IF NOT EXISTS guru (
-    id TEXT PRIMARY KEY,
-    pin TEXT NOT NULL,
-    nama TEXT NOT NULL,
-    role TEXT DEFAULT 'guru'
-);
-
-CREATE TABLE IF NOT EXISTS absensi (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    guru_id TEXT NOT NULL,
-    timestamp TEXT NOT NULL,
-    iso_timestamp TEXT NOT NULL,
-    keterangan TEXT NOT NULL,
-    latitude REAL NOT NULL,
-    longitude REAL NOT NULL,
-    status TEXT NOT NULL,
-    FOREIGN KEY (guru_id) REFERENCES guru(id)
-);
-
-CREATE TABLE IF NOT EXISTS izin (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    guru_id TEXT NOT NULL,
-    tanggal TEXT NOT NULL,
-    jenis TEXT NOT NULL,
-    alasan TEXT,
-    foto_key TEXT,
-    status TEXT DEFAULT 'Pending',
-    FOREIGN KEY (guru_id) REFERENCES guru(id)
-);
-
-CREATE TABLE IF NOT EXISTS pengaturan (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
-
+CREATE TABLE IF NOT EXISTS guru (id TEXT PRIMARY KEY, pin TEXT NOT NULL, nama TEXT NOT NULL, role TEXT DEFAULT 'guru');
+CREATE TABLE IF NOT EXISTS absensi (id INTEGER PRIMARY KEY AUTOINCREMENT, guru_id TEXT NOT NULL, timestamp TEXT NOT NULL, iso_timestamp TEXT NOT NULL, keterangan TEXT NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL, status TEXT NOT NULL, FOREIGN KEY (guru_id) REFERENCES guru(id));
+CREATE TABLE IF NOT EXISTS izin (id INTEGER PRIMARY KEY AUTOINCREMENT, guru_id TEXT NOT NULL, tanggal TEXT NOT NULL, jenis TEXT NOT NULL, alasan TEXT, foto_key TEXT, status TEXT DEFAULT 'Pending', FOREIGN KEY (guru_id) REFERENCES guru(id));
+CREATE TABLE IF NOT EXISTS pengaturan (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('LOKASI_SEKOLAH_LAT', '-7.14872');
 INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('LOKASI_SEKOLAH_LNG', '131.70819');
 INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('RADIUS_METER', '20');
@@ -43,7 +12,6 @@ INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('JAM_TERLAMBAT_SELESAI', '
 INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('JAM_PULANG_MULAI', '11:00');
 INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('JAM_PULANG_SELESAI', '14:50');
 INSERT OR IGNORE INTO pengaturan (key, value) VALUES ('HARI_LIBUR', '[]');
-
 INSERT OR IGNORE INTO guru (id, pin, nama, role) VALUES ('sdinleling@admin', 'Admin123', 'Administrator', 'admin');
 INSERT OR IGNORE INTO guru (id, pin, nama, role) VALUES ('G001', '4821', 'Miryam Yuliana Lololuan.S.PdK', 'guru');
 INSERT OR IGNORE INTO guru (id, pin, nama, role) VALUES ('G002', '1234', 'Wanti Slarmanat.S.Pd', 'guru');
