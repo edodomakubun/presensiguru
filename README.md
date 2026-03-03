@@ -9,6 +9,10 @@ Ikuti langkah-langkah di bawah ini untuk memasang aplikasi ini secara gratis men
 4. Beri nama database: `absensi-db` (atau nama lain).
 5. Setelah dibuat, klik tab **Console**.
 6. Salin dan tempel isi dari file `schema.sql` ke dalam konsol D1, lalu klik **Execute**. Ini akan membuat tabel-tabel yang diperlukan.
+7. **PENTING (Update Fitur Wajah):** Jika Anda sebelumnya sudah membuat database dan mengalami error `no such column: face_descriptor`, jalankan perintah ini di konsol D1:
+   ```sql
+   ALTER TABLE guru ADD COLUMN face_descriptor TEXT;
+   ```
 
 ## 2. Persiapan Penyimpanan Foto (Cloudflare R2)
 1. Buka menu **Workers & Pages** -> **R2**.
