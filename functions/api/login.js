@@ -24,7 +24,8 @@ export async function onRequestPost(context) {
     id: user.id,
     nama: user.nama,
     role: user.role,
-    isFaceRegistered: !!user.face_descriptor
+    isFaceRegistered: !!user.face_descriptor,
+    face_descriptor: user.face_descriptor ? JSON.parse(user.face_descriptor) : null
   }), {
     headers: { "Content-Type": "application/json" },
   });

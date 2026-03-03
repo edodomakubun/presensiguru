@@ -97,7 +97,7 @@ function renderFaceRegistration() {
             </div>
 
             <button id="btnRegisterFace" class="w-full m3-btn-filled py-4 text-lg">MULAI PINDAI</button>
-            <p id="regStatus" class="mt-4 text-sm font-bold text-blue-600"></p>
+            <p id="regStatus" class="mt-4 text-sm font-bold text-blue-600 uppercase tracking-widest"></p>
         </div>
     `;
 
@@ -824,44 +824,73 @@ async function handleAbsen() {
     btn.innerText = 'VERIFIKASI WAJAH...';
 
     const faceResult = await Swal.fire({
-        title: 'Verifikasi Wajah',
+        title: 'Verifikasi Wajah Otomatis',
         html: `
             <div class="relative w-full aspect-square bg-black rounded-2xl overflow-hidden mb-4">
                 <video id="verifyVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                <div id="faceOverlay" class="absolute inset-0 border-4 border-blue-400 opacity-30 rounded-2xl pointer-events-none transition-all duration-300"></div>
             </div>
-            <p id="verifyStatus" class="text-sm font-bold text-blue-600">Mencari wajah...</p>
+            <p id="verifyStatus" class="text-sm font-bold text-gray-500">Posisikan wajah Anda di depan kamera...</p>
         `,
         showCancelButton: true,
         cancelButtonText: 'Batal',
-        confirmButtonText: 'Ambil Wajah',
-        confirmButtonColor: '#3f5f91',
+        showConfirmButton: false, // Hidden, automatic detection
         didOpen: async () => {
             const video = document.getElementById('verifyVideo');
             const status = document.getElementById('verifyStatus');
+            const overlay = document.getElementById('faceOverlay');
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
             video.srcObject = stream;
+            window.verifyStream = stream;
 
-            window.verifyStream = stream; // Save to stop later
+            const storedDescriptor = state.user.face_descriptor;
+            if (!storedDescriptor) {
+                Swal.fire({ icon: 'error', title: 'Data Wajah Hilang', text: 'Mohon hubungi admin untuk reset wajah.' });
+                return;
+            }
+
+            let attempts = 0;
+            const interval = setInterval(async () => {
+                if (!state.modelsLoaded) return;
+                attempts++;
+
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                if (detection) {
+                    overlay.classList.add('border-green-400', 'opacity-100');
+                    overlay.classList.remove('border-blue-400', 'opacity-30');
+
+                    const distance = faceapi.euclideanDistance(storedDescriptor, detection.descriptor);
+
+                    if (distance < 0.6) {
+                        clearInterval(interval);
+                        status.innerText = 'Wajah Cocok! Mengambil Absen...';
+                        status.classList.add('text-green-600');
+                        setTimeout(() => Swal.clickConfirm(), 1000);
+                        window.verifiedDescriptor = Array.from(detection.descriptor);
+                    } else {
+                        status.innerText = 'Wajah tidak cocok. Coba lagi...';
+                        status.classList.add('text-red-600');
+                    }
+                } else {
+                    overlay.classList.remove('border-green-400', 'opacity-100');
+                    overlay.classList.add('border-blue-400', 'opacity-30');
+                    status.innerText = 'Posisikan wajah Anda di depan kamera...';
+                    status.classList.remove('text-red-600', 'text-green-600');
+                }
+
+                if (attempts > 30) { // Timeout 30 seconds
+                    clearInterval(interval);
+                    Swal.fire({ icon: 'error', title: 'Gagal Verifikasi', text: 'Wajah tidak terdeteksi atau tidak cocok dalam waktu lama. Harap coba lagi.' });
+                }
+            }, 1000);
+            window.verifyInterval = interval;
         },
         willClose: () => {
-            if (window.verifyStream) {
-                window.verifyStream.getTracks().forEach(t => t.stop());
-            }
-        },
-        preConfirm: async () => {
-            const video = document.getElementById('verifyVideo');
-            const status = document.getElementById('verifyStatus');
-
-            status.innerText = 'Menganalisa wajah...';
-            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptor();
-
-            if (!detection) {
-                Swal.showValidationMessage('Wajah tidak terdeteksi! Pastikan wajah terlihat jelas.');
-                return false;
-            }
-            return Array.from(detection.descriptor);
+            if (window.verifyStream) window.verifyStream.getTracks().forEach(t => t.stop());
+            if (window.verifyInterval) clearInterval(window.verifyInterval);
         }
     });
 
@@ -871,7 +900,7 @@ async function handleAbsen() {
         return;
     }
 
-    const faceDescriptor = faceResult.value;
+    const faceDescriptor = window.verifiedDescriptor;
 
     btn.disabled = true; btn.innerText = 'MEMINDAI LOKASI...';
     recentStatus.classList.add('hidden');
