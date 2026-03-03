@@ -1,5 +1,16 @@
 export async function onRequestGet(context) {
-  const { env } = context;
+  const { env, request } = context;
+  const url = new URL(request.url);
+  const id = url.searchParams.get('id');
+
+  if (id) {
+    const user = await env.DB.prepare("SELECT id, nama, role, face_descriptor FROM guru WHERE id = ?").bind(id).first();
+    if (!user) return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });
+    return new Response(JSON.stringify(user), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const data = await env.DB.prepare("SELECT id, nama, role, (face_descriptor IS NOT NULL) as hasFace FROM guru WHERE role = 'guru'").all();
   return new Response(JSON.stringify(data.results), {
     headers: { "Content-Type": "application/json" },

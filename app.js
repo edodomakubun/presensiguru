@@ -11,6 +11,11 @@ const app = document.getElementById('app');
 // Initialization
 async function init() {
     if (state.user) {
+        // Fetch Fresh User Data from DB (especially face_descriptor)
+        if (state.user.role === 'guru') {
+            await syncUser();
+        }
+
         if (state.user.role === 'admin') {
             state.currentPage = 'admin_dashboard';
         } else if (!state.user.isFaceRegistered) {
@@ -26,6 +31,28 @@ async function init() {
     if (state.user && !state.modelsLoaded) {
         loadFaceModels();
     }
+}
+
+async function syncUser() {
+    try {
+        const res = await fetch(`/api/guru?id=${state.user.id}`);
+        if (res.ok) {
+            const fresh = await res.json();
+            state.user = {
+                ...state.user,
+                nama: fresh.nama,
+                face_descriptor: fresh.face_descriptor ? JSON.parse(fresh.face_descriptor) : null,
+                isFaceRegistered: !!fresh.face_descriptor
+            };
+            // Do NOT store descriptor in localStorage, only profile info
+            localStorage.setItem('user', JSON.stringify({
+                id: state.user.id,
+                nama: state.user.nama,
+                role: state.user.role,
+                isFaceRegistered: state.user.isFaceRegistered
+            }));
+        }
+    } catch (e) { console.error("Sync User Gagal", e); }
 }
 
 async function loadFaceModels() {
@@ -142,9 +169,7 @@ function renderFaceRegistration() {
 
                     if (res.ok) {
                         stream.getTracks().forEach(track => track.stop());
-                        state.user.isFaceRegistered = true;
-                        state.user.face_descriptor = Array.from(detection.descriptor);
-                        localStorage.setItem('user', JSON.stringify(state.user));
+                        await syncUser(); // Refresh data from DB
                         Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Wajah Anda telah terdaftar.', timer: 2000, showConfirmButton: false });
                         setTimeout(() => init(), 2000);
                     } else {
@@ -845,10 +870,18 @@ async function handleAbsen() {
             window.verifyStream = stream;
 
             let storedDescriptor = state.user.face_descriptor;
+
+            // Re-sync if memory is empty
+            if (!storedDescriptor) {
+                status.innerText = 'Mensinkronisasi data wajah...';
+                await syncUser();
+                storedDescriptor = state.user.face_descriptor;
+            }
+
             if (typeof storedDescriptor === 'string') storedDescriptor = JSON.parse(storedDescriptor);
 
             if (!storedDescriptor) {
-                Swal.fire({ icon: 'error', title: 'Data Wajah Hilang', text: 'Mohon hubungi admin untuk reset wajah.' });
+                Swal.fire({ icon: 'error', title: 'Data Wajah Hilang', text: 'Mohon hubungi admin untuk reset wajah atau coba login kembali.' });
                 return;
             }
 
