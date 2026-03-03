@@ -284,24 +284,32 @@ function renderLogin() {
 
 function renderGuruDashboard() {
     app.innerHTML = `
-        <div class="px-6 pt-10">
-            <header class="flex justify-between items-start mb-8">
-                <div>
-                    <h1 class="text-2xl font-bold text-[#1a1c1e]">Hai, ${state.user.nama.split(' ')[0]} 👋</h1>
-                    <p class="text-gray-500 font-medium">Bagaimana harimu?</p>
+        <div class="px-6 pt-10 animate-in fade-in duration-700">
+            <header class="flex justify-between items-center mb-8">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-400 rounded-2xl flex items-center justify-center text-white font-black text-xl mr-4 shadow-lg">
+                        ${state.user.nama.charAt(0)}
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-black text-[#1a1c1e] leading-tight">Halo, ${state.user.nama.split(' ')[0]}!</h1>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">SDN LELING • GURU</p>
+                    </div>
                 </div>
-                <button onclick="logout()" class="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <button onclick="logout()" class="p-3 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                 </button>
             </header>
 
-            <div class="m3-card p-6 mb-6">
-                <div class="flex justify-between items-center mb-6">
+            <div class="m3-card p-8 mb-8 relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-100/50 rounded-full blur-3xl"></div>
+                <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-100/50 rounded-full blur-3xl"></div>
+
+                <div class="flex justify-between items-start mb-10 relative z-10">
                     <div>
-                        <p id="date" class="text-sm font-bold text-[#3f5f91] uppercase tracking-wider mb-1">MEMUAT...</p>
-                        <div id="clock" class="text-4xl font-black text-[#1a1c1e]">00:00:00</div>
+                        <p id="date" class="text-[10px] font-black text-[#3f5f91] uppercase tracking-[0.2em] mb-2">MEMUAT...</p>
+                        <div id="clock" class="text-5xl font-black text-[#1a1c1e] tracking-tighter">00:00:00</div>
                     </div>
                     <div class="m3-fab">
                          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -331,11 +339,27 @@ function renderGuruDashboard() {
                 <button onclick="handleAbsen()" id="btnAbsen" class="w-full m3-btn-filled py-5 text-lg uppercase tracking-wider shadow-lg">KONFIRMASI PRESENSI</button>
             </div>
 
-            <h2 class="font-bold text-lg mb-4 text-[#1a1c1e]">Presensi Saya</h2>
-            <div id="recentStatus" class="mb-4 hidden animate-in fade-in slide-in-from-top-4 duration-300"></div>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-black text-lg text-[#1a1c1e]">Aktivitas Hari Ini</h2>
+                <div class="px-3 py-1 bg-white/50 rounded-full text-[9px] font-black text-gray-400 border border-gray-100 uppercase tracking-widest">Live Update</div>
+            </div>
 
-            <div id="todayLog" class="m3-card p-5">
-                <p class="text-center text-gray-400 text-sm font-medium py-4">Menunggu presensi hari ini...</p>
+            <div id="recentStatus" class="mb-6 hidden animate-in slide-in-from-bottom-4 duration-500"></div>
+
+            <div id="todayLog" class="m3-card p-2">
+                <p class="text-center text-gray-400 text-[10px] font-bold py-10 uppercase tracking-widest">Belum ada aktivitas terekam</p>
+            </div>
+
+            <!-- Stats Mini Card -->
+            <div class="mt-8 grid grid-cols-2 gap-4">
+                <div class="bg-gradient-to-br from-white to-gray-50 p-5 rounded-[24px] border border-white shadow-sm">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-2">Total Hadir</p>
+                    <p id="totalHadir" class="text-2xl font-black text-[#1a1c1e]">0</p>
+                </div>
+                <div class="bg-gradient-to-br from-white to-gray-50 p-5 rounded-[24px] border border-white shadow-sm">
+                    <p class="text-[9px] font-black text-gray-400 uppercase mb-2">Total Izin</p>
+                    <p id="totalIzin" class="text-2xl font-black text-[#1a1c1e]">0</p>
+                </div>
             </div>
         </div>
 
@@ -371,29 +395,6 @@ function renderGuruDashboard() {
     fetchTodayLog();
 }
 
-async function fetchTodayLog() {
-    const res = await fetch(`/api/riwayat?guru_id=${state.user.id}`);
-    const data = await res.json();
-    const today = new Date().toLocaleDateString('id-ID');
-    const logs = data.filter(r => r.timestamp.includes(today));
-    state.todayLogs = logs; // Save to global state
-
-    if (logs.length > 0) {
-        document.getElementById('todayLog').innerHTML = logs.map(l => `
-            <div class="flex items-center justify-between border-b border-gray-100 last:border-0 py-3">
-                <div class="flex items-center">
-                    <div class="w-8 h-8 ${l.status === 'Hadir' ? 'bg-green-100 text-green-600' : l.status === 'Terlambat' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'} rounded-lg flex items-center justify-center mr-3">
-                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                         </svg>
-                    </div>
-                    <div class="text-sm font-bold text-[#1a1c1e]">${l.status}</div>
-                </div>
-                <div class="text-xs font-bold text-gray-400">${l.timestamp.split(',')[1] || ''}</div>
-            </div>
-        `).join('');
-    }
-}
 
 function renderIzinGuru() {
     renderGuruDashboard(); // Keep layout
@@ -840,11 +841,30 @@ function startClock() {
 
     const update = () => {
         const now = new Date();
-        const witOffset = 9 * 60;
-        const wit = new Date(now.getTime() + (witOffset + now.getTimezoneOffset()) * 60000);
-        clock.innerText = wit.toTimeString().split(' ')[0];
-        dateEl.innerText = wit.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
-        updateAttendanceIndicators(wit);
+        // Use Intl.DateTimeFormat for accurate Asia/Jayapura time
+        const formatter = new Intl.DateTimeFormat('id-ID', {
+            timeZone: 'Asia/Jayapura',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+        const dateIdFormatter = new Intl.DateTimeFormat('id-ID', {
+            timeZone: 'Asia/Jayapura',
+            weekday: 'long',
+            day: 'numeric',
+            month: 'short'
+        });
+
+        const parts = formatter.formatToParts(now);
+        const timeStr = `${parts.find(p => p.type === 'hour').value}:${parts.find(p => p.type === 'minute').value}:${parts.find(p => p.type === 'second').value}`;
+
+        clock.innerText = timeStr;
+        dateEl.innerText = dateIdFormatter.format(now);
+
+        // Create a date object that represents Jayapura time for indicators
+        const jayapuraTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jayapura"}));
+        updateAttendanceIndicators(jayapuraTime);
     };
     setInterval(update, 1000); update();
 }
@@ -861,7 +881,7 @@ function updateAttendanceIndicators(now) {
 
     // Reset styles
     [iMasuk, iTelat, iPulang].forEach(el => {
-        el.parentElement.className = "flex-1 text-center p-2 rounded-2xl border border-gray-100 bg-gray-50";
+        el.parentElement.className = "flex-1 text-center p-3 rounded-2xl border border-gray-100 bg-white/50 backdrop-blur-sm transition-all duration-500";
         el.className = "text-[10px] font-bold text-gray-600";
     });
 
@@ -927,21 +947,65 @@ function updateAttendanceIndicators(now) {
 }
 
 function setIndicatorActive(el, text) {
-    el.parentElement.className = "flex-1 text-center p-2 rounded-2xl border border-blue-200 bg-blue-50 animate-pulse";
-    el.className = "text-[10px] font-black text-blue-600";
+    el.parentElement.className = "flex-1 text-center p-3 rounded-2xl border-2 border-blue-400 bg-blue-50/50 shadow-[0_0_15px_rgba(59,130,246,0.2)] animate-pulse";
+    el.className = "text-[10px] font-black text-blue-700";
     el.innerText = text;
 }
 
 function setIndicatorPassed(el, text) {
-    el.parentElement.className = "flex-1 text-center p-2 rounded-2xl border border-red-100 bg-red-50";
-    el.className = "text-[10px] font-bold text-red-400";
+    el.parentElement.className = "flex-1 text-center p-3 rounded-2xl border border-red-200 bg-red-50/30 opacity-60";
+    el.className = "text-[10px] font-bold text-red-500";
     el.innerText = text;
 }
 
 function setIndicatorDone(el, text) {
-    el.parentElement.className = "flex-1 text-center p-2 rounded-2xl border border-green-200 bg-green-50";
-    el.className = "text-[10px] font-black text-green-600";
+    el.parentElement.className = "flex-1 text-center p-3 rounded-2xl border-2 border-green-400 bg-green-50/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]";
+    el.className = "text-[10px] font-black text-green-700";
     el.innerText = text;
+}
+
+async function fetchTodayLog() {
+    try {
+        const res = await fetch(`/api/riwayat?guru_id=${state.user.id}`);
+        const data = await res.json();
+
+        // Use Jayapura timezone for "Today" comparison
+        const today = new Date().toLocaleDateString('id-ID', { timeZone: 'Asia/Jayapura' });
+        const logs = data.filter(r => r.timestamp.includes(today));
+        state.todayLogs = logs;
+
+        if (logs.length > 0) {
+            document.getElementById('todayLog').innerHTML = logs.map(l => `
+                <div class="flex items-center justify-between bg-white/40 p-4 rounded-3xl mb-2 border border-white/60 shadow-sm">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 ${l.status === 'Hadir' ? 'bg-green-100 text-green-600' : l.status === 'Terlambat' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'} rounded-2xl flex items-center justify-center mr-4 shadow-sm">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                             </svg>
+                        </div>
+                        <div>
+                            <div class="text-xs font-black text-[#1a1c1e] tracking-tight">${l.status}</div>
+                            <div class="text-[9px] font-bold text-gray-400 uppercase">${l.keterangan}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs font-black text-blue-600">${l.timestamp.split(',')[1] || ''}</div>
+                        <div class="text-[8px] font-bold text-gray-300 uppercase">WIT</div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            document.getElementById('todayLog').innerHTML = '<p class="text-center text-gray-400 text-[10px] font-bold py-10 uppercase tracking-widest">Belum ada aktivitas hari ini</p>';
+        }
+
+        // Stats
+        document.getElementById('totalHadir').innerText = data.filter(r => r.status === 'Hadir' || r.status === 'Terlambat').length;
+
+        const resIzin = await fetch(`/api/izin`);
+        const dataIzin = await resIzin.json();
+        document.getElementById('totalIzin').innerText = dataIzin.filter(i => i.guru_id === state.user.id).length;
+
+    } catch (e) { console.error(e); }
 }
 
 async function handleAbsen() {

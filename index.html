@@ -13,16 +13,18 @@
     <style>
         body {
             font-family: 'Inter', 'Roboto', sans-serif;
-            background-color: #f7f9fc;
+            background-color: #f0f4f8;
             color: #1a1c1e;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Android 15 / Material 3 Elevation */
+        /* Android 15 / Material 3 Elevation + Glassmorphism */
         .m3-card {
-            background-color: #ffffff;
-            border-radius: 28px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-            border: 1px solid #e1e2e5;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 32px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
         /* M3 Tonal Button */
         .m3-btn-tonal {
@@ -37,14 +39,19 @@
             background-color: #c0c9e6;
             transform: scale(0.96);
         }
-        /* M3 Filled Button (Android 15 style) */
+        /* M3 Filled Button (Android 15 style) + Rich Gradient */
         .m3-btn-filled {
-            background-color: #3f5f91;
+            background: linear-gradient(135deg, #3f5f91 0%, #2a4365 100%);
             color: #ffffff;
             border-radius: 100px;
-            font-weight: 600;
-            padding: 12px 24px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            font-weight: 700;
+            padding: 14px 24px;
+            box-shadow: 0 10px 20px rgba(63, 95, 145, 0.3);
+            transition: all 0.3s ease;
+        }
+        .m3-btn-filled:active {
+            transform: translateY(2px);
+            box-shadow: 0 5px 10px rgba(63, 95, 145, 0.3);
         }
         /* Bottom Nav */
         .m3-bottom-nav {
@@ -81,15 +88,15 @@
         }
         /* Floating Action Button Style */
         .m3-fab {
-            background-color: #dbe2f9;
+            background: linear-gradient(135deg, #dbe2f9 0%, #c0d1f8 100%);
             color: #101c2b;
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
+            width: 60px;
+            height: 60px;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 16px rgba(189, 210, 249, 0.4);
         }
         /* Mirror Camera for Front Facing */
         video {
