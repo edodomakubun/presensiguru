@@ -143,6 +143,7 @@ function renderFaceRegistration() {
                     if (res.ok) {
                         stream.getTracks().forEach(track => track.stop());
                         state.user.isFaceRegistered = true;
+                        state.user.face_descriptor = Array.from(detection.descriptor);
                         localStorage.setItem('user', JSON.stringify(state.user));
                         Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Wajah Anda telah terdaftar.', timer: 2000, showConfirmButton: false });
                         setTimeout(() => init(), 2000);
@@ -843,7 +844,9 @@ async function handleAbsen() {
             video.srcObject = stream;
             window.verifyStream = stream;
 
-            const storedDescriptor = state.user.face_descriptor;
+            let storedDescriptor = state.user.face_descriptor;
+            if (typeof storedDescriptor === 'string') storedDescriptor = JSON.parse(storedDescriptor);
+
             if (!storedDescriptor) {
                 Swal.fire({ icon: 'error', title: 'Data Wajah Hilang', text: 'Mohon hubungi admin untuk reset wajah.' });
                 return;
@@ -862,7 +865,9 @@ async function handleAbsen() {
                     overlay.classList.add('border-green-400', 'opacity-100');
                     overlay.classList.remove('border-blue-400', 'opacity-30');
 
-                    const distance = faceapi.euclideanDistance(storedDescriptor, detection.descriptor);
+                    // Convert descriptor to Float32Array if it is not already
+                    const compareDescriptor = (storedDescriptor instanceof Float32Array) ? storedDescriptor : new Float32Array(storedDescriptor);
+                    const distance = faceapi.euclideanDistance(compareDescriptor, detection.descriptor);
 
                     if (distance < 0.6) {
                         clearInterval(interval);
